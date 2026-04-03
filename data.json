@@ -1,0 +1,80 @@
+{
+  "moodEntries": [
+    {
+      "date": "Fri, Apr 3",
+      "time": "8:11 PM",
+      "timestamp": "2026-04-03T12:11:20.769Z",
+      "emoji": "😐",
+      "level": 3,
+      "tags": [],
+      "note": "dwa",
+      "id": 1775218280792
+    }
+  ],
+  "chatHistory": [],
+  "reminders": [
+    {
+      "id": 1,
+      "title": "Evening Reflection",
+      "time": "20:00",
+      "active": true,
+      "icon": "Moon",
+      "color": "text-indigo-500",
+      "freq": "Daily"
+    },
+    {
+      "id": 2,
+      "title": "Morning Check-in",
+      "time": "08:30",
+      "active": true,
+      "icon": "Sunrise",
+      "color": "text-orange-500",
+      "freq": "Daily"
+    }
+  ],
+  "assessments": [
+    {
+      "type": "Anxiety Level",
+      "date": "2026-04-03T09:22:40.590Z",
+      "score": 2.3333333333333335,
+      "severity": "High",
+      "answers": [
+        3,
+        2,
+        2
+      ],
+      "id": 1775208160684
+    }
+  ],
+  "journalEntries": [],
+  "kitNotes": [
+    {
+      "content": "Do not stess\n",
+      "date": "Added just now",
+      "id": 1775209467573
+    }
+  ],
+  "mixes": [],
+  "settings": {
+    "name": "Alex",
+    "darkMode": true,
+    "notifications": true,
+    "language": "English (US)"
+  },
+  "calmKitItems": [
+    {
+      "id": 1,
+      "type": "technique",
+      "title": "Box Breathing",
+      "description": "Focus & nervous system regulation",
+      "icon": "Wind"
+    },
+    {
+      "id": 2,
+      "type": "technique",
+      "title": "5-4-3-2-1 Grounding",
+      "description": "Anxiety reduction & panic relief",
+      "icon": "Wind"
+    }
+  ]
+}
