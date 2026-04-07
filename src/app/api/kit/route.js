@@ -45,3 +45,11 @@ export async function POST(request) {
   
   return NextResponse.json(newNote, { status: 201 });
 }
+
+export async function DELETE(request) {
+  const { id } = await request.json();
+  const db = await getDb();
+  db.kitNotes = db.kitNotes.filter(note => note.id !== id);
+  await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
+  return NextResponse.json({ success: true });
+}

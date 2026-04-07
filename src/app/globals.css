@@ -118,6 +118,15 @@
     100% { transform: scale(1); }
   }
 
+  @keyframes gentle-breathing {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .animate-breathing {
+    animation: gentle-breathing 8s ease-in-out infinite;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
