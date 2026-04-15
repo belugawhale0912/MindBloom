@@ -25,6 +25,153 @@
   ],
   "assessments": [
     {
+      "type": "Stress Check",
+      "date": "2026-04-15T05:18:00.439Z",
+      "score": 2,
+      "totalScore": 20,
+      "questionCount": 10,
+      "severity": "Moderate",
+      "answers": [
+        2,
+        3,
+        2,
+        1,
+        0,
+        3,
+        2,
+        2,
+        3,
+        2
+      ],
+      "id": 1776230280467
+    },
+    {
+      "type": "Stress Check",
+      "date": "2026-04-15T05:15:31.600Z",
+      "score": 1.8,
+      "totalScore": 18,
+      "questionCount": 10,
+      "severity": "Moderate",
+      "answers": [
+        2,
+        1,
+        3,
+        2,
+        3,
+        1,
+        0,
+        1,
+        2,
+        3
+      ],
+      "id": 1776230131675
+    },
+    {
+      "type": "Stress Check",
+      "date": "2026-04-15T05:07:37.880Z",
+      "score": 3,
+      "totalScore": 30,
+      "questionCount": 10,
+      "severity": "High",
+      "answers": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "id": 1776229657959
+    },
+    {
+      "type": "Stress Check",
+      "date": "2026-04-15T05:03:09.084Z",
+      "score": 2.9,
+      "totalScore": 29,
+      "questionCount": 10,
+      "severity": "High",
+      "answers": [
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "id": 1776229389207
+    },
+    {
+      "type": "Sleep Quality",
+      "date": "2026-04-15T04:52:52.085Z",
+      "score": 0.5,
+      "totalScore": 5,
+      "questionCount": 10,
+      "severity": "Low",
+      "answers": [
+        2,
+        1,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "id": 1776228772108
+    },
+    {
+      "type": "Stress Check",
+      "date": "2026-04-15T04:52:13.421Z",
+      "score": 2.6,
+      "totalScore": 26,
+      "questionCount": 10,
+      "severity": "High",
+      "answers": [
+        3,
+        3,
+        3,
+        2,
+        3,
+        2,
+        3,
+        2,
+        3,
+        2
+      ],
+      "id": 1776228733437
+    },
+    {
+      "type": "Stress Check",
+      "date": "2026-04-15T04:51:43.413Z",
+      "score": 1.4,
+      "totalScore": 14,
+      "questionCount": 10,
+      "severity": "Moderate",
+      "answers": [
+        0,
+        2,
+        1,
+        2,
+        1,
+        3,
+        2,
+        0,
+        1,
+        2
+      ],
+      "id": 1776228703893
+    },
+    {
       "type": "Anxiety Level",
       "date": "2026-04-03T09:22:40.590Z",
       "score": 2.3333333333333335,
@@ -60,6 +207,18 @@
       "title": "5-4-3-2-1 Grounding",
       "description": "Anxiety reduction & panic relief",
       "icon": "Wind"
+    }
+  ],
+  "companionMessages": [
+    {
+      "sender": "user",
+      "text": "hihi",
+      "id": 1776229552210
+    },
+    {
+      "sender": "ai",
+      "text": "I hear you. I'm just a prototype right now, but I'm here to support you in the future!",
+      "id": 1776229553267
     }
   ]
 }

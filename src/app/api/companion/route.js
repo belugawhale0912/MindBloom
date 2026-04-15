@@ -18,17 +18,24 @@ async function getDb() {
 
 export async function GET() {
   const db = await getDb();
+  if (!db.companionMessages) {
+    db.companionMessages = [];
+  }
   return NextResponse.json(db.companionMessages);
 }
 
 export async function POST(request) {
   const newMessage = await request.json();
   const db = await getDb();
-  
+
+  if (!db.companionMessages) {
+    db.companionMessages = [];
+  }
+
   if (!newMessage.id) {
     newMessage.id = Date.now();
   }
-  
+
   db.companionMessages.push(newMessage);
   await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
   
