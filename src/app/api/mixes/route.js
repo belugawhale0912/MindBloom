@@ -39,3 +39,25 @@ export async function POST(request) {
   
   return NextResponse.json(newMix, { status: 201 });
 }
+
+export async function DELETE(request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+
+  if (!id) {
+    return NextResponse.json({ error: "Missing mix id" }, { status: 400 });
+  }
+
+  const db = await getDb();
+  const initialLength = db.mixes.length;
+
+  db.mixes = db.mixes.filter((mix) => String(mix.id) !== String(id));
+
+  if (db.mixes.length === initialLength) {
+    return NextResponse.json({ error: "Mix not found" }, { status: 404 });
+  }
+
+  await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
+
+  return NextResponse.json({ success: true });
+}
