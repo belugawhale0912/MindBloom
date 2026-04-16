@@ -29,6 +29,7 @@ export default function Settings() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    
     // From here used to add the dark mode setting to local storage
     if (typeof window !== "undefined") {
       const isDark = localStorage.getItem("theme") === "dark" ||

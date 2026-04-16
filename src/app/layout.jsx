@@ -46,8 +46,7 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-
-      // To here
+{/* To Here */}
 
       <body className="font-sans h-full flex overflow-hidden bg-background">
         <ToastProvider>
