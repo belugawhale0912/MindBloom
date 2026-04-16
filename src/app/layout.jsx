@@ -29,7 +29,8 @@ export default function RootLayout({ children }) {
 
       // From here used to change the dark mode
 
-      suppressHydrationWarning
+      suppressHydrationWarning // to allow react to accept <html class="dark"> from the script without hydration issues
+      // dangerouslySetInnerHTML is used to allow javascript added into the component before rendered using react 
     >
       <head>
         <script
