@@ -17,6 +17,9 @@ import {
   Play,
   Save,
   Pause,
+  Trash2,
+  Square,
+  X,
 } from "lucide-react";
 import { useRef } from "react";
 
@@ -107,7 +110,9 @@ export default function WhiteNoiseMixer() {
   const [savedMixes, setSavedMixes] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [timerLeft, setTimerLeft] = useState(0); // seconds
+  const [loadedMixId, setLoadedMixId] = useState(null);
   const audioRefs = useRef({}); 
+  const hasSelectedSounds = Object.values(activeSounds).some(Boolean);
 
   useEffect(() => {
     fetch("/api/mixes")
@@ -189,7 +194,7 @@ export default function WhiteNoiseMixer() {
   };
 
   const handleSaveMix = async () => {
-    if (!mixName.trim() || isSaving) return;
+    if (!mixName.trim() || isSaving || !hasSelectedSounds) return;
     setIsSaving(true);
     const newMix = {
       name: mixName.trim(),
@@ -215,10 +220,59 @@ export default function WhiteNoiseMixer() {
     }
   };
 
+  const handleDeleteMix = async (mixId) => {
+    try {
+      const res = await fetch(`/api/mixes?id=${mixId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        throw new Error("Failed to delete mix");
+      }
+      setSavedMixes((prev) => prev.filter((mix) => String(mix.id) !== String(mixId)));
+      if (String(loadedMixId) === String(mixId)) {
+        pauseAndUnselectAll();
+        setLoadedMixId(null);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const loadMix = (mix) => {
     setActiveSounds(mix.activeSounds);
     setVolumes(mix.volumes);
     setMasterVolume(mix.masterVolume);
+    setLoadedMixId(mix.id);
+  };
+
+  const handleRandomPlay = () => {
+    const soundIds = SOUNDS.map((sound) => sound.id);
+    const shuffled = [...soundIds].sort(() => Math.random() - 0.5);
+    const pickCount = Math.max(1, Math.floor(Math.random() * 3) + 2); // 2-4 sounds
+    const picked = shuffled.slice(0, Math.min(pickCount, shuffled.length));
+
+    const nextActiveSounds = {};
+    const nextVolumes = { ...volumes };
+    picked.forEach((id) => {
+      nextActiveSounds[id] = true;
+      nextVolumes[id] = [Math.floor(Math.random() * 41) + 40]; // 40-80
+    });
+
+    setActiveSounds(nextActiveSounds);
+    setVolumes(nextVolumes);
+    setLoadedMixId(null);
+    setIsPlaying(true);
+  };
+
+  const pauseAndUnselectAll = () => {
+    setIsPlaying(false);
+    setActiveSounds({});
+    setLoadedMixId(null);
+  };
+
+  const clearTimerAndPause = () => {
+    setTimerLeft(0);
+    setIsPlaying(false);
   };
 
   const toggleSound = (id) => {
@@ -237,31 +291,54 @@ export default function WhiteNoiseMixer() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out pb-32">
-      <div>
-        <h2 className="text-3xl font-heading font-bold text-foreground">
-          Find Your Calm 🎵
-        </h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Mix sounds to create your perfect relaxing environment.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-3xl font-heading font-bold text-foreground">
+            Find Your Calm 🎵
+          </h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Mix sounds to create your perfect relaxing environment.
+          </p>
+        </div>
+        <Button
+          variant="secondary"
+          className="rounded-full h-10 px-4 text-sm font-semibold mb-[1px]"
+          onClick={handleRandomPlay}
+        >
+          <Play className="h-4.5 w-4.5 mr-2" /> Random Play
+        </Button>
       </div>
 
-      {savedMixes.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          <span className="text-sm font-semibold flex items-center mr-2">Saved Mixes:</span>
-          {savedMixes.map(mix => (
-            <Button 
-              key={mix.id} 
-              variant="outline" 
-              size="sm" 
-              className="rounded-full"
-              onClick={() => loadMix(mix)}
-            >
-              <Play className="h-3 w-3 mr-2" /> {mix.name}
-            </Button>
-          ))}
+      <div className="mb-6 space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <span className="text-sm font-semibold">Saved Mixes:</span>
         </div>
-      )}
+        {savedMixes.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {savedMixes.map((mix) => (
+              <div key={mix.id} className="flex items-center rounded-full border border-border/70 pr-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => loadMix(mix)}
+                >
+                  <Play className="h-3 w-3 mr-2" /> {mix.name}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive"
+                  onClick={() => handleDeleteMix(mix.id)}
+                  aria-label={`Delete ${mix.name} mix`}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {SOUNDS.map((sound) => {
@@ -322,26 +399,36 @@ export default function WhiteNoiseMixer() {
 
       {/* Global Controls - Fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 p-4 z-40 md:sticky md:bottom-2 md:rounded-3xl md:border md:shadow-lg md:mt-8">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-6">
-          <Button
-            size="lg"
-            className="w-full md:w-auto shrink-0 rounded-full h-14 px-8 text-base shadow-sm font-bold bg-primary hover:bg-primary/90"
-            onClick={() => setIsPlaying(!isPlaying)}
-          >
-            {isPlaying ? (
-              <>
-                <Pause className="mr-2 h-5 w-5 fill-current" /> Pause Mix
-              </>
-            ) : (
-              <>
-                <Play className="mr-2 h-5 w-5 fill-current" /> Play Mix
-              </>
-            )}
-          </Button>
+        <div className="max-w-4xl mx-auto w-full flex flex-col gap-4">
+          <div className="w-full md:w-auto shrink-0 flex gap-2">
+            <Button
+              size="lg"
+              className="flex-1 md:flex-none rounded-full h-14 px-8 text-base shadow-sm font-bold bg-primary hover:bg-primary/90"
+              onClick={() => setIsPlaying(!isPlaying)}
+            >
+              {isPlaying ? (
+                <>
+                  <Pause className="mr-2 h-5 w-5 fill-current" /> Pause Mix
+                </>
+              ) : (
+                <>
+                  <Play className="mr-2 h-5 w-5 fill-current" /> Play Mix
+                </>
+              )}
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="rounded-full h-14 px-4"
+              onClick={pauseAndUnselectAll}
+            >
+              <Square className="mr-2 h-4 w-4" /> Unselect
+            </Button>
+          </div>
 
-          <div className="flex-1 w-full space-y-4">
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-semibold w-24 shrink-0">
+          <div className="w-full space-y-4">
+            <div className="w-full flex items-center gap-3">
+              <span className="text-sm font-semibold w-20 shrink-0">
                 Master Vol
               </span>
               <Slider
@@ -353,31 +440,40 @@ export default function WhiteNoiseMixer() {
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              {/* This might cause hydration mismatch if Select isn't dynamically disabled during SSR, but for prototype it's fine */}
-              <div className="w-full sm:w-1/2 flex items-center gap-3">
-                <span className="text-sm font-semibold w-24 shrink-0">
+            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="w-full flex items-center gap-3">
+                <span className="text-sm font-semibold w-20 shrink-0">
                   Timer
                 </span>
-                <div className="flex gap-1 w-full overflow-x-auto pb-1 no-scrollbar">
+                <div className="w-full flex flex-wrap items-center gap-2">
                   {[10, 30, 60].map(m => (
-                    <Button 
-                      key={m} 
-                      variant="secondary" 
-                      size="sm" 
+                    <Button
+                      key={m}
+                      variant="secondary"
+                      size="sm"
                       className={`rounded-full text-[10px] h-7 px-3 ${timerLeft === m * 60 ? "bg-primary text-white" : ""}`}
                       onClick={() => handleSetTimer(m)}
                     >
                       {m}m
                     </Button>
                   ))}
-                  {timerLeft > 0 && (
-                    <span className="ml-2 text-xs font-mono text-primary animate-pulse">{formatTime(timerLeft)}</span>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full text-[10px] h-7 px-3"
+                    onClick={clearTimerAndPause}
+                  >
+                    <X className="h-3 w-3 mr-1" /> Clear
+                  </Button>
                 </div>
               </div>
+              <div className="w-full flex justify-start lg:justify-end">
+                <span className="text-xs font-mono text-primary bg-secondary/50 rounded-full px-3 py-1">
+                  Remaining: {timerLeft > 0 ? formatTime(timerLeft) : "--:--"}
+                </span>
+              </div>
 
-              <div className="w-full sm:w-1/2 relative">
+              <div className="w-full lg:col-span-2 relative">
                 <Input
                   placeholder="Name this mix..."
                   value={mixName}
@@ -389,8 +485,8 @@ export default function WhiteNoiseMixer() {
                   size="icon"
                   variant="ghost"
                   onClick={handleSaveMix}
-                  disabled={isSaving || !mixName.trim()}
-                  className="absolute right-1 top-1 h-8 w-8 rounded-full text-primary hover:bg-primary/10"
+                  disabled={isSaving || !mixName.trim() || !hasSelectedSounds}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-primary hover:bg-primary/10"
                 >
                   <Save className="h-4 w-4" />
                 </Button>

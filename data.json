@@ -207,7 +207,68 @@
   ],
   "journalEntries": [],
   "kitNotes": [],
-  "mixes": [],
+  "mixes": [
+    {
+      "name": "coffe shop with wind",
+      "activeSounds": {
+        "rain": false,
+        "ocean": false,
+        "campfire": false,
+        "forest": false,
+        "wind": true,
+        "coffee": true
+      },
+      "volumes": {
+        "rain": [
+          70
+        ],
+        "lofi": [
+          40
+        ],
+        "ocean": [
+          50
+        ],
+        "campfire": [
+          50
+        ],
+        "forest": [
+          50
+        ],
+        "wind": [
+          50
+        ],
+        "coffee": [
+          50
+        ]
+      },
+      "masterVolume": [
+        80
+      ],
+      "id": 1776269541958
+    },
+    {
+      "name": "rain and oceana",
+      "activeSounds": {
+        "rain": true,
+        "ocean": true
+      },
+      "volumes": {
+        "rain": [
+          70
+        ],
+        "lofi": [
+          40
+        ],
+        "ocean": [
+          50
+        ]
+      },
+      "masterVolume": [
+        80
+      ],
+      "id": 1776269509647
+    }
+  ],
   "settings": {
     "name": "Alex",
     "darkMode": false,
