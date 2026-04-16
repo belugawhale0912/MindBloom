@@ -41,6 +41,5 @@ yarn-error.log*
 next-env.d.ts
 
 # local data and uploads
-data.json
 /public/uploads/
 data.json

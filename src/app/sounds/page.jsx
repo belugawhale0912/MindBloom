@@ -15,7 +15,6 @@ import {
   Headphones,
   MoonStar,
   Play,
-  Save,
   Pause,
   Trash2,
   Square,
@@ -398,7 +397,7 @@ export default function WhiteNoiseMixer() {
       </div>
 
       {/* Global Controls - Fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 p-4 z-40 md:sticky md:bottom-2 md:rounded-3xl md:border md:shadow-lg md:mt-8">
+      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 p-4 z-30 md:sticky md:bottom-2 md:rounded-3xl md:border md:shadow-lg md:mt-8 md:z-auto">
         <div className="max-w-4xl mx-auto w-full flex flex-col gap-4">
           <div className="w-full md:w-auto shrink-0 flex gap-2">
             <Button
@@ -473,22 +472,21 @@ export default function WhiteNoiseMixer() {
                 </span>
               </div>
 
-              <div className="w-full lg:col-span-2 relative">
+              <div className="w-full lg:col-span-2">
                 <Input
                   placeholder="Name this mix..."
                   value={mixName}
                   onChange={(e) => setMixName(e.target.value)}
                   disabled={isSaving}
-                  className="rounded-full pr-10 border-border/80 focus-visible:ring-primary/30"
+                  className="rounded-full border-border/80 focus-visible:ring-primary/30"
                 />
                 <Button
-                  size="icon"
-                  variant="ghost"
+                  variant="default"
                   onClick={handleSaveMix}
                   disabled={isSaving || !mixName.trim() || !hasSelectedSounds}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-primary hover:bg-primary/10"
+                  className="mt-2 w-full rounded-full"
                 >
-                  <Save className="h-4 w-4" />
+                  Save Mix
                 </Button>
               </div>
             </div>
