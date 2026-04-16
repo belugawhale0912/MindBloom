@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -23,13 +23,73 @@ import {
 } from "lucide-react";
 
 export default function GuidedTools() {
+  const toolTabs = [
+    { value: "breathing", label: "Breathing" },
+    { value: "meditation", label: "Meditation" },
+    { value: "journaling", label: "Journaling" },
+    { value: "grounding", label: "Grounding" },
+  ];
+  const [activeToolTab, setActiveToolTab] = useState("breathing");
   const [isBreathing, setIsBreathing] = useState(false);
   const [breathingPhase, setBreathingPhase] = useState("Ready");
   const [breathingMode, setBreathingMode] = useState("Box Breathing");
-  const [meditationPlaying, setMeditationPlaying] = useState(null);
+  const [selectedMeditationVideoId, setSelectedMeditationVideoId] = useState("");
+  const [meditationTopic, setMeditationTopic] = useState("Morning Mindfulness");
+  const [meditationVideos, setMeditationVideos] = useState([]);
+  const [isLoadingMeditation, setIsLoadingMeditation] = useState(false);
+  const [meditationError, setMeditationError] = useState("");
   const [journalContent, setJournalContent] = useState("");
   const [savedJournals, setSavedJournals] = useState([]);
   const [isSavingJournal, setIsSavingJournal] = useState(false);
+
+  const meditationTopics = [
+    { label: "Morning Mindfulness", value: "Morning Mindfulness" },
+    { label: "Body Scan Meditation", value: "Body Scan Meditation" },
+    { label: "Sleep Meditation", value: "Sleep Meditation" },
+    { label: "Anxiety Relief Meditation", value: "Anxiety Relief Meditation" },
+    { label: "Visualization Meditation", value: "Visualization Meditation" },
+  ];
+
+  const fallbackMeditationVideos = {
+    "Morning Mindfulness": [
+      { id: "inpok4MKVLM", title: "5-Minute Meditation You Can Do Anywhere", channelTitle: "Goodful" },
+      { id: "ZToicYcHIOU", title: "10 Minute Morning Meditation", channelTitle: "Great Meditation" },
+    ],
+    "Body Scan Meditation": [
+      { id: "QS2yDmWk0vs", title: "10 Minute Body Scan Meditation", channelTitle: "The Honest Guys" },
+      { id: "15q-N-_kkrU", title: "Guided Body Scan Meditation", channelTitle: "Mindful Peace" },
+    ],
+    "Sleep Meditation": [
+      { id: "aEqlQvczMJQ", title: "Guided Sleep Meditation", channelTitle: "The Honest Guys" },
+      { id: "69o0P7s8GHE", title: "Sleep Meditation for Deep Rest", channelTitle: "Great Meditation" },
+    ],
+    "Anxiety Relief Meditation": [
+      { id: "O-6f5wQXSu8", title: "Guided Meditation for Anxiety", channelTitle: "The Honest Guys" },
+      { id: "MIr3RsUWrdo", title: "10 Minute Meditation for Anxiety", channelTitle: "Goodful" },
+    ],
+    "Visualization Meditation": [
+      { id: "1vx8iUvfyCY", title: "Guided Visualization Meditation", channelTitle: "Michael Sealey" },
+      { id: "kM5vM4QpC3Q", title: "Visualization Meditation for Calm", channelTitle: "Great Meditation" },
+    ],
+  };
+
+  const breathingPatterns = {
+    "Box Breathing": [
+      { label: "Inhale", seconds: 4 },
+      { label: "Hold", seconds: 4 },
+      { label: "Exhale", seconds: 4 },
+      { label: "Hold", seconds: 4 },
+    ],
+    "4-7-8 Relaxing": [
+      { label: "Inhale", seconds: 4 },
+      { label: "Hold", seconds: 7 },
+      { label: "Exhale", seconds: 8 },
+    ],
+    "Deep Calm": [
+      { label: "Inhale", seconds: 5 },
+      { label: "Exhale", seconds: 5 },
+    ],
+  };
 
   // Fetch journals
   useEffect(() => {
@@ -44,6 +104,7 @@ export default function GuidedTools() {
     setIsSavingJournal(true);
     const newEntry = {
       date: new Date().toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric" }),
+      createdAt: new Date().toISOString(),
       content: journalContent,
     };
     try {
@@ -68,21 +129,187 @@ export default function GuidedTools() {
   useEffect(() => {
     let interval;
     if (isBreathing) {
-      let count = 0;
-      const phases = breathingMode === "Box Breathing" 
-        ? ["Inhale (4s)", "Hold (4s)", "Exhale (4s)", "Hold (4s)"]
-        : ["Inhale (4s)", "Hold (7s)", "Exhale (8s)"];
-      
-      setBreathingPhase(phases[0]);
+      const pattern = breathingPatterns[breathingMode] || breathingPatterns["Box Breathing"];
+      let stepIndex = 0;
+      let remaining = pattern[0].seconds;
+
+      setBreathingPhase(`${pattern[0].label} (${remaining}s)`);
       interval = setInterval(() => {
-        count = (count + 1) % phases.length;
-        setBreathingPhase(phases[count]);
-      }, 4000); // simplified 4s for all for prototype, but ideally unique per phase
+        remaining -= 1;
+        if (remaining <= 0) {
+          stepIndex = (stepIndex + 1) % pattern.length;
+          remaining = pattern[stepIndex].seconds;
+        }
+        setBreathingPhase(`${pattern[stepIndex].label} (${remaining}s)`);
+      }, 1000);
     } else {
       setBreathingPhase("Ready");
     }
     return () => clearInterval(interval);
   }, [isBreathing, breathingMode]);
+
+  useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
+
+    if (!apiKey) {
+      setMeditationError("Using built-in videos because YouTube API key is not configured.");
+      setMeditationVideos([]);
+      return;
+    }
+
+    const fetchMeditationVideos = async () => {
+      try {
+        setIsLoadingMeditation(true);
+        setMeditationError("");
+        const params = new URLSearchParams({
+          part: "snippet",
+          type: "video",
+          q: meditationTopic,
+          maxResults: "6",
+          videoEmbeddable: "true",
+          safeSearch: "strict",
+          key: apiKey,
+        });
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params.toString()}`);
+        if (!res.ok) {
+          throw new Error("Failed to load meditation videos.");
+        }
+        const data = await res.json();
+        const rawVideos = (data.items || []).filter((item) => item?.id?.videoId);
+
+        if (rawVideos.length === 0) {
+          setMeditationVideos([]);
+          setMeditationError("No API videos found. Showing built-in videos.");
+          return;
+        }
+
+        const videoIds = rawVideos.map((item) => item.id.videoId).join(",");
+        const detailsParams = new URLSearchParams({
+          part: "status",
+          id: videoIds,
+          key: apiKey,
+        });
+        const detailsRes = await fetch(
+          `https://www.googleapis.com/youtube/v3/videos?${detailsParams.toString()}`,
+        );
+
+        if (!detailsRes.ok) {
+          throw new Error("Failed to verify meditation videos.");
+        }
+
+        const detailsData = await detailsRes.json();
+        const validVideoIds = new Set(
+          (detailsData.items || [])
+            .filter((item) => {
+              const status = item.status || {};
+              return (
+                status.privacyStatus === "public" &&
+                status.embeddable === true &&
+                status.uploadStatus === "processed"
+              );
+            })
+            .map((item) => item.id),
+        );
+
+        const videos = rawVideos.filter((item) => validVideoIds.has(item.id.videoId));
+        setMeditationVideos(videos);
+        if (videos.length === 0) {
+          setMeditationError(
+            "No open/public API videos found. Showing built-in videos.",
+          );
+        }
+      } catch (error) {
+        setMeditationVideos([]);
+        setMeditationError("Unable to load API videos right now. Showing built-in videos.");
+        console.error(error);
+      } finally {
+        setIsLoadingMeditation(false);
+      }
+    };
+
+    fetchMeditationVideos();
+  }, [meditationTopic]);
+
+  const availableMeditationVideos = useMemo(() => {
+    if (meditationVideos.length > 0) {
+      return meditationVideos.map((video) => ({
+        id: video.id.videoId,
+        title: video.snippet.title,
+        channelTitle: video.snippet.channelTitle,
+        isApi: true,
+      }));
+    }
+
+    return (fallbackMeditationVideos[meditationTopic] || []).map((video) => ({
+      ...video,
+      isApi: false,
+    }));
+  }, [meditationVideos, meditationTopic]);
+
+  useEffect(() => {
+    if (availableMeditationVideos.length === 0) {
+      setSelectedMeditationVideoId("");
+      return;
+    }
+    setSelectedMeditationVideoId(availableMeditationVideos[0].id);
+  }, [availableMeditationVideos]);
+
+  const journalsGroupedByDay = useMemo(() => {
+    const groups = {};
+    savedJournals.forEach((entry) => {
+      const parsedDate = entry.createdAt ? new Date(entry.createdAt) : new Date(entry.date);
+      const safeDate = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+      const dayKey = safeDate.toLocaleDateString("en-CA");
+
+      if (!groups[dayKey]) {
+        groups[dayKey] = {
+          label: safeDate.toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          }),
+          entries: [],
+        };
+      }
+      groups[dayKey].entries.push(entry);
+    });
+    return Object.entries(groups).sort(([a], [b]) => (a > b ? -1 : 1));
+  }, [savedJournals]);
+
+  const journalStreak = useMemo(() => {
+    if (savedJournals.length === 0) return 0;
+
+    const uniqueDays = [
+      ...new Set(
+        savedJournals.map((entry) => {
+          const parsedDate = entry.createdAt ? new Date(entry.createdAt) : new Date(entry.date);
+          const safeDate = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+          return safeDate.toLocaleDateString("en-CA");
+        }),
+      ),
+    ].sort((a, b) => (a > b ? -1 : 1));
+
+    if (uniqueDays.length === 0) return 0;
+
+    let streak = 1;
+    let currentDate = new Date(uniqueDays[0]);
+
+    for (let i = 1; i < uniqueDays.length; i += 1) {
+      const previous = new Date(currentDate);
+      previous.setDate(previous.getDate() - 1);
+      const expected = previous.toLocaleDateString("en-CA");
+
+      if (uniqueDays[i] === expected) {
+        streak += 1;
+        currentDate = new Date(uniqueDays[i]);
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  }, [savedJournals]);
 
   const toggleBreathing = () => setIsBreathing(!isBreathing);
 
@@ -97,20 +324,32 @@ export default function GuidedTools() {
         </p>
       </div>
 
-      <Tabs defaultValue="breathing" className="w-full">
-        <TabsList className="w-full justify-start h-auto p-1 bg-secondary/50 rounded-2xl overflow-x-auto hide-scrollbar flex-nowrap mb-6 [&>button]:flex-1 flex min-w-max">
-          <TabsTrigger value="breathing" className="rounded-xl py-2.5 px-4">
-            <Wind className="h-4 w-4 mr-2" /> Breathing
-          </TabsTrigger>
-          <TabsTrigger value="meditation" className="rounded-xl py-2.5 px-4">
-            <Heart className="h-4 w-4 mr-2" /> Meditation
-          </TabsTrigger>
-          <TabsTrigger value="journaling" className="rounded-xl py-2.5 px-4">
-            <BookOpen className="h-4 w-4 mr-2" /> Journaling
-          </TabsTrigger>
-          <TabsTrigger value="grounding" className="rounded-xl py-2.5 px-4">
-            <Anchor className="h-4 w-4 mr-2" /> Grounding
-          </TabsTrigger>
+      <Tabs value={activeToolTab} onValueChange={setActiveToolTab} className="w-full">
+        <div className="w-full mb-6 rounded-2xl bg-secondary/50 p-1">
+          <div className="rounded-xl bg-background/70 px-3 py-2">
+            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+              Select Tool
+            </label>
+            <select
+              value={activeToolTab}
+              onChange={(e) => setActiveToolTab(e.target.value)}
+              className="w-full rounded-xl border border-border/70 bg-background px-3 py-2 text-sm"
+              aria-label="Select guided tool"
+            >
+              {toolTabs.map((tab) => (
+                <option key={tab.value} value={tab.value}>
+                  {tab.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <TabsList className="sr-only">
+          {toolTabs.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         {/* BREATHING TAB */}
@@ -118,7 +357,7 @@ export default function GuidedTools() {
           <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-b from-card to-secondary/20">
             <CardContent className="flex flex-col items-center justify-center py-16">
               <div
-                className={`w-48 h-48 rounded-full border-4 flex items-center justify-center transition-all duration-3000 ease-in-out ${isBreathing ? "scale-125 border-primary/50 bg-primary/10" : "scale-100 border-primary/20 bg-transparent"}`}
+                className={`w-40 h-40 md:w-48 md:h-48 rounded-full border-4 flex items-center justify-center transition-all duration-3000 ease-in-out ${isBreathing ? "scale-110 md:scale-115 border-primary/50 bg-primary/10" : "scale-100 border-primary/20 bg-transparent"}`}
                 style={{
                   animation: isBreathing
                     ? "pulse-breathe 8s infinite alternate"
@@ -186,44 +425,101 @@ export default function GuidedTools() {
 
         {/* MEDITATION TAB */}
         <TabsContent value="meditation" className="space-y-4">
-          {[
-            {
-              title: "5-min Morning Calm",
-              duration: "5 min",
-              desc: "Start your day with clarity.",
-            },
-            {
-              title: "10-min Body Scan",
-              duration: "10 min",
-              desc: "Release physical tension.",
-            },
-            {
-              title: "Sleep Wind-Down",
-              duration: "15 min",
-              desc: "Prepare your mind for rest.",
-            },
-          ].map((item, i) => (
-            <Card
-              key={i}
-              onClick={() => setMeditationPlaying(meditationPlaying === i ? null : i)}
-              className={`border-0 shadow-sm ring-1 transition-all cursor-pointer ${meditationPlaying === i ? "ring-primary bg-primary/5" : "ring-border/50 hover:ring-primary/40"}`}
-            >
-              <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4">
-                <div className={`w-full sm:w-24 h-24 sm:h-16 rounded-xl flex items-center justify-center shrink-0 transition-colors ${meditationPlaying === i ? "bg-primary text-white" : "bg-secondary/80"}`}>
-                  {meditationPlaying === i ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 text-primary" />}
+          <Card className="border-0 shadow-sm ring-1 ring-border/50">
+            <CardContent className="p-4 space-y-3">
+              <label className="text-sm font-medium text-foreground">Choose an activity</label>
+              <select
+                value={meditationTopic}
+                onChange={(e) => {
+                  setMeditationTopic(e.target.value);
+                }}
+                className="w-full rounded-xl border border-border/70 bg-background px-3 py-2 text-sm"
+              >
+                {meditationTopics.map((topic) => (
+                  <option key={topic.value} value={topic.value}>
+                    {topic.label}
+                  </option>
+                ))}
+              </select>
+            </CardContent>
+          </Card>
+
+          {isLoadingMeditation && (
+            <p className="text-sm text-muted-foreground">Loading YouTube videos...</p>
+          )}
+
+          {!isLoadingMeditation && meditationError && (
+            <p className="text-sm text-muted-foreground">{meditationError}</p>
+          )}
+
+          <Card className="border-0 shadow-sm ring-1 ring-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Available Videos</CardTitle>
+              <CardDescription>Select a video to play below.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {availableMeditationVideos.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No videos available for this activity yet.</p>
+              ) : (
+                <div className="grid gap-2">
+                  {availableMeditationVideos.map((video) => (
+                    <button
+                      key={video.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedMeditationVideoId(video.id);
+                      }}
+                      className={`w-full rounded-xl border px-3 py-2 text-left transition-colors ${
+                        selectedMeditationVideoId === video.id
+                          ? "border-primary bg-primary/10"
+                          : "border-border/60 hover:border-primary/40"
+                      }`}
+                    >
+                      <p className="text-sm font-semibold text-foreground line-clamp-2">{video.title}</p>
+                      <p className="text-xs text-muted-foreground">{video.channelTitle}</p>
+                    </button>
+                  ))}
                 </div>
-                <div className="flex-1 w-full text-center sm:text-left">
-                  <h3 className={`font-semibold transition-colors ${meditationPlaying === i ? "text-primary" : "text-foreground"}`}>
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">{meditationPlaying === i ? "Playing now..." : item.desc}</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {selectedMeditationVideoId && (
+            <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-primary/5">
+              <CardContent className="p-4">
+                <div className="aspect-video w-full overflow-hidden rounded-xl ring-1 ring-border/40">
+                  <iframe
+                    className="h-full w-full"
+                    src={`https://www.youtube.com/embed/${selectedMeditationVideoId}`}
+                    title="Selected meditation video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  />
                 </div>
-                <Badge variant="secondary" className="bg-background text-xs">
-                  {item.duration}
-                </Badge>
               </CardContent>
             </Card>
-          ))}
+          )}
+
+          {selectedMeditationVideoId && (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                onClick={() =>
+                  window.open(
+                    `https://www.youtube.com/watch?v=${selectedMeditationVideoId}`,
+                    "_blank",
+                    "noopener,noreferrer",
+                  )
+                }
+              >
+                Open Current Video
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         {/* JOURNALING TAB */}
@@ -259,18 +555,30 @@ export default function GuidedTools() {
 
           {/* Past Journals */}
           <div className="mt-8 space-y-4">
-            <h3 className="font-heading font-semibold text-foreground text-lg">Your Past Entries</h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-heading font-semibold text-foreground text-lg">Your Past Entries</h3>
+              <Badge variant="secondary" className="bg-[#b8860b]/10 text-[#b8860b] border border-[#b8860b]/20">
+                {journalStreak} day streak
+              </Badge>
+            </div>
             {savedJournals.length === 0 ? (
               <p className="text-muted-foreground text-sm">No entries yet. Start writing above!</p>
             ) : (
               <div className="grid gap-4">
-                {savedJournals.map(entry => (
-                  <Card key={entry.id} className="border-0 shadow-sm ring-1 ring-border/50 bg-secondary/10">
+                {journalsGroupedByDay.map(([dayKey, dayGroup]) => (
+                  <Card key={dayKey} className="border-0 shadow-sm ring-1 ring-border/50 bg-secondary/10">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-semibold">{entry.date}</CardTitle>
+                      <CardTitle className="text-sm font-semibold">{dayGroup.label}</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-sm text-foreground whitespace-pre-wrap">
-                      {entry.content}
+                    <CardContent className="space-y-3">
+                      {dayGroup.entries.map((entry, index) => (
+                        <div key={entry.id}>
+                          <div className="rounded-xl bg-background/60 p-3 text-sm text-foreground whitespace-pre-wrap">
+                            {entry.content}
+                          </div>
+                          {index < dayGroup.entries.length - 1 && <hr className="my-3 border-border/60" />}
+                        </div>
+                      ))}
                     </CardContent>
                   </Card>
                 ))}
