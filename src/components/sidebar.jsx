@@ -14,11 +14,12 @@ import {
   ClipboardList,
   BriefcaseMedical,
   Music,
-  Settings,
+  ChevronLeft,
+  ChevronRight,
   Menu,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 
 const navItems = [
@@ -32,19 +33,20 @@ const navItems = [
   { name: "Self-Assessment", href: "/assessment", icon: ClipboardList },
   { name: "My Calm Kit", href: "/kit", icon: BriefcaseMedical },
   { name: "White Noise Mixer", href: "/sounds", icon: Music },
-  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   return (
     <>
+      {/* Mobile Toggle Button */}
       <Button
         variant="ghost"
         size="icon"
-        className="md:hidden fixed bottom-4 right-4 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg"
+        className="md:hidden fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-110 active:scale-95 transition-all"
         onClick={() => setIsOpen(!isOpen)}
       >
         {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -53,26 +55,52 @@ export function Sidebar() {
       {/* Mobile Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/20 md:hidden"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden animate-in fade-in duration-300"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 transform bg-card shadow-sm transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:block border-r border-border",
-          isOpen ? "translate-x-0" : "-translate-x-full",
+          "fixed inset-y-0 left-0 z-40 transform bg-background/95 backdrop-blur-xl border-r border-border/80 shadow-sm transition-all duration-500 ease-in-out md:translate-x-0 md:static md:block",
+          isOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0",
+          !isOpen && (isCollapsed ? "md:w-20" : "md:w-64")
         )}
       >
-        <div className="h-full flex flex-col pt-16 md:pt-4 pb-4">
-          <div className="px-6 mb-8 md:hidden">
-            <h2 className="text-2xl font-bold text-primary flex items-center gap-2 font-heading">
-              <Flower2 className="h-6 w-6" />
+        <div className="h-full flex flex-col pt-16 md:pt-6 pb-6 relative">
+          {/* Collapse Toggle Button (Desktop Only) */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="hidden md:flex absolute -right-3 top-8 h-6 w-6 items-center justify-center rounded-full bg-background border border-border/80 shadow-md text-muted-foreground hover:text-primary hover:scale-110 transition-all z-50 focus:outline-none"
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronLeft className="h-3.5 w-3.5" />
+            )}
+          </button>
+
+          {/* Logo Section */}
+          <div className={cn(
+            "px-6 mb-10 transition-all duration-500 flex items-center gap-3 overflow-hidden",
+            isCollapsed && !isOpen ? "md:px-5 md:justify-center" : "px-6"
+          )}>
+            <div className="min-w-[24px]">
+              <Flower2 className="h-7 w-7 text-primary stroke-[2.5px]" />
+            </div>
+            <h2 className={cn(
+              "text-xl font-bold text-foreground font-heading tracking-tight transition-all duration-300 whitespace-nowrap",
+              isCollapsed && !isOpen ? "md:opacity-0 md:w-0" : "opacity-100 w-auto"
+            )}>
               MindBloom
             </h2>
           </div>
 
-          <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+          {/* Navigation Items */}
+          <nav className={cn(
+            "flex-1 px-4 space-y-2 overflow-y-auto no-scrollbar",
+            isCollapsed && !isOpen ? "md:px-2" : "px-4"
+          )}>
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -82,27 +110,71 @@ export function Sidebar() {
                   href={item.href}
                   onClick={() => setIsOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 group text-sm font-medium",
+                    "relative flex items-center rounded-2xl transition-all duration-300 group overflow-visible",
                     isActive
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-secondary hover:text-primary",
+                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                      : "text-muted-foreground hover:bg-secondary/80 hover:text-primary",
+                    isCollapsed && !isOpen 
+                      ? "md:w-12 md:h-12 md:justify-center md:mx-auto" 
+                      : "px-4 py-3 gap-3"
                   )}
                 >
-                  <Icon
-                    className={cn(
-                      "h-5 w-5",
-                      isActive
-                        ? "text-primary-foreground"
-                        : "text-muted-foreground group-hover:text-primary",
-                    )}
-                  />
-                  {item.name}
+                  <div className={cn(
+                    "flex items-center justify-center transition-all duration-300",
+                    isCollapsed && !isOpen ? "min-w-0" : "min-w-[20px]"
+                  )}>
+                    <Icon
+                      className={cn(
+                        "transition-all duration-300",
+                        isCollapsed && !isOpen ? "h-6 w-6" : "h-5 w-5",
+                        isActive
+                          ? "text-primary-foreground"
+                          : "text-muted-foreground group-hover:text-primary",
+                      )}
+                    />
+                  </div>
+                  
+                  <span className={cn(
+                    "font-medium text-sm transition-all duration-300 whitespace-nowrap overflow-hidden",
+                    isCollapsed && !isOpen ? "md:opacity-0 md:w-0" : "opacity-100 w-auto"
+                  )}>
+                    {item.name}
+                  </span>
+
+                  {/* Tooltip (Collapsed Desktop Only) */}
+                  {isCollapsed && (
+                    <div className="absolute left-16 hidden md:group-hover:flex items-center z-[100] animate-in slide-in-from-left-2 fade-in duration-200 pointer-events-none">
+                      <div className="bg-foreground text-background text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap uppercase tracking-widest relative">
+                        {item.name}
+                        {/* Tooltip Arrow */}
+                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 border-y-4 border-y-transparent border-r-4 border-r-foreground" />
+                      </div>
+                    </div>
+                  )}
                 </Link>
               );
             })}
           </nav>
+
+          {/* User Section (Optional hint of personality at bottom) */}
+          {!isCollapsed || isOpen ? (
+            <div className="px-6 pt-4 mt-auto border-t border-border/50">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Mindful Journey</p>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="h-1.5 flex-1 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-full w-2/3 bg-primary rounded-full" />
+                </div>
+                <span className="text-[10px] font-bold text-primary">60%</span>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-auto px-2 flex justify-center border-t border-border/50 pt-6">
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            </div>
+          )}
         </div>
       </aside>
     </>
   );
 }
+
