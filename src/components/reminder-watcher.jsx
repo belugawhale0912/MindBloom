@@ -35,37 +35,31 @@ export function ReminderWatcher() {
     // Interval 2: Check time every 15s for higher precision
     const checkInterval = setInterval(() => {
       const now = new Date();
-      // Manual formatting to be 100% sure we get HH:mm even on different locales
       const hh = String(now.getHours()).padStart(2, "0");
       const mm = String(now.getMinutes()).padStart(2, "0");
       const currentTime = `${hh}:${mm}`;
+      const isNewMinute = currentTime !== lastChecked.current;
+      
+      if (isNewMinute) {
+        lastChecked.current = currentTime;
+      }
 
-      // Debug log (hidden in console)
-      console.log(`[MindBloom Watcher] Ticking at ${currentTime}. Watching ${remindersRef.current.length} reminders.`);
+      // Emit status update for the debug UI
+      window.dispatchEvent(new CustomEvent('mindbloom:watcher-update', {
+        detail: {
+          currentTime,
+          lastChecked: lastChecked.current,
+          watchingCount: remindersRef.current.length,
+          status: "Active"
+        }
+      }));
 
-      if (currentTime === lastChecked.current) return;
-      lastChecked.current = currentTime;
+      if (!isNewMinute) return;
 
       remindersRef.current.forEach((reminder) => {
-        // Normalize reminder time to HH:mm to ensure matches
-        let rTime = reminder.time.trim();
-        if (rTime.includes(" ")) {
-          // If it's something like "8:00 AM", convert it for comparison
-          try {
-            const [time, modifier] = rTime.split(" ");
-            let [hours, minutes] = time.split(":");
-            if (hours === "12") hours = "00";
-            if (modifier === "PM") hours = parseInt(hours, 10) + 12;
-            rTime = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-          } catch (e) {
-            console.error("Format error on reminder time:", rTime);
-          }
-        } else if (rTime.includes(":")) {
-          // Ensure HH:mm format (e.g., "8:00" -> "08:00")
-          const [h, m] = rTime.split(":");
-          rTime = `${h.padStart(2, "0")}:${m.padStart(2, "0")}`;
-        }
-
+        // Enforced format HH:mm in data.json makes this simple
+        const rTime = reminder.time.trim();
+        
         if (rTime === currentTime) {
           console.log(`[MindBloom Watcher] MATCH FOUND! Triggering ${reminder.title}`);
           triggerNotification(reminder);
@@ -77,9 +71,11 @@ export function ReminderWatcher() {
       clearInterval(listInterval);
       clearInterval(checkInterval);
     };
-  }, []); // Run once on mount and stay alive
+  }, []); 
 
   const triggerNotification = (reminder) => {
+    console.log(`[MindBloom Watcher] Triggering: ${reminder.title}`);
+    
     // 1. In-app Toast
     addToast({
       title: "MindBloom Reminder",
@@ -87,6 +83,7 @@ export function ReminderWatcher() {
       type: "reminder",
       duration: 10000,
     });
+
 
     // 2. Browser Notification
     if ("Notification" in window && Notification.permission === "granted") {

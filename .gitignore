@@ -42,4 +42,3 @@ next-env.d.ts
 
 # local data and uploads
 /public/uploads/
-data.json

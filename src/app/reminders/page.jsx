@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Clock, Sunrise, SunMedium, Moon, Coffee, Trash2, Pencil, Check, X, Bell } from "lucide-react";
+import { Plus, Clock, Sunrise, SunMedium, Moon, Coffee, Trash2, Pencil, Check, X } from "lucide-react";
 import { useToast } from "@/components/ui/toast-custom";
 
 const ICON_MAP = {
@@ -24,6 +24,7 @@ export default function Reminders() {
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
   const [editTime, setEditTime] = useState("");
+  const [reminderToDelete, setReminderToDelete] = useState(null);
 
   useEffect(() => {
     fetch("/api/reminders")
@@ -33,19 +34,24 @@ export default function Reminders() {
   }, []);
 
   const saveReminders = async (updated, successMessage = null) => {
+    const previousReminders = [...reminders];
     setReminders(updated);
     try {
-      await fetch("/api/reminders", {
+      const res = await fetch("/api/reminders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updated)
       });
+      
+      if (!res.ok) throw new Error("Failed to save");
+
       if (successMessage) {
         addToast({ title: "Success", message: successMessage, type: "success" });
       }
     } catch (err) {
       console.error(err);
-      addToast({ title: "Error", message: "Failed to save reminders", type: "error" });
+      setReminders(previousReminders); // Rollback
+      addToast({ title: "Error", message: "Failed to save reminders. Changes rolled back.", type: "error" });
     }
   };
 
@@ -72,18 +78,11 @@ export default function Reminders() {
     setEditingId(null);
   };
 
-  const deleteReminder = (id) => {
-    if (typeof window !== "undefined" && window.confirm("Are you sure you want to remove this reminder?")) {
-      // Using string comparison to avoid type mismatch issues
-      const updated = reminders.filter((r) => String(r.id) !== String(id));
-      
-      if (updated.length === reminders.length) {
-        console.error("No reminder found with id:", id);
-        addToast({ title: "Error", message: "Reminder not found in list", type: "error" });
-        return;
-      }
-
+  const confirmDelete = () => {
+    if (reminderToDelete) {
+      const updated = reminders.filter((r) => String(r.id) !== String(reminderToDelete.id));
       saveReminders(updated, "Reminder removed");
+      setReminderToDelete(null);
     }
   };
 
@@ -96,7 +95,6 @@ export default function Reminders() {
       active: true,
       icon: "Clock",
       color: "text-primary",
-      freq: "Daily",
     };
     saveReminders([...reminders, newReminder], "Reminder added");
     setIsAdding(false);
@@ -115,33 +113,8 @@ export default function Reminders() {
             Set gentle nudges to check in with yourself.
           </p>
         </div>
+
         <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-          <Button 
-            variant="outline" 
-            className="rounded-full shadow-sm"
-            onClick={() => {
-              try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                [880, 1318.51, 1760].forEach((freq, i) => {
-                  const osc = audioCtx.createOscillator();
-                  const gain = audioCtx.createGain();
-                  osc.type = "sine";
-                  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 2);
-                  osc.connect(gain);
-                  gain.connect(audioCtx.destination);
-                  osc.start(audioCtx.currentTime + (i * 0.05));
-                  osc.stop(audioCtx.currentTime + 2);
-                });
-                addToast({ title: "Sound Test", message: "If you heard a chime, audio is working!", type: "success" });
-              } catch (e) {
-                addToast({ title: "Audio Error", message: "Your browser blocked the sound. Try clicking the page first.", type: "error" });
-              }
-            }}
-          >
-            <Bell className="mr-2 h-4 w-4" /> Test Sound
-          </Button>
           <Button className="rounded-full shadow-sm" onClick={() => setIsAdding(!isAdding)}>
             <Plus className="mr-2 h-4 w-4" /> {isAdding ? "Cancel" : "Add New Reminder"}
           </Button>
@@ -226,17 +199,11 @@ export default function Reminders() {
                         >
                           {reminder.title}
                         </h3>
-                        <div className="flex flex-wrap items-center gap-3 mt-1">
+                        <div className="flex items-center gap-3 mt-1">
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Clock className="h-3.5 w-3.5" />
                             <span>{reminder.time}</span>
                           </div>
-                          <Badge
-                            variant="outline"
-                            className={`text-[10px] font-medium ${reminder.active ? "border-primary/30 text-primary" : "border-border text-muted-foreground"}`}
-                          >
-                            {reminder.freq}
-                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -259,7 +226,7 @@ export default function Reminders() {
                         className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full h-8 w-8 relative z-50"
                         onClick={(e) => {
                           e.stopPropagation();
-                          deleteReminder(reminder.id);
+                          setReminderToDelete(reminder);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -279,22 +246,41 @@ export default function Reminders() {
         })}
       </div>
 
-      <div className="mt-8 space-y-4">
-        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider text-muted-foreground">
-          Frequency Options
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {["Daily", "Weekdays", "Weekends", "Custom"].map((freq) => (
-            <Badge
-              key={freq}
-              variant="secondary"
-              className="px-4 py-2 text-sm rounded-full font-normal cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors border border-transparent hover:border-primary/20"
-            >
-              {freq}
-            </Badge>
-          ))}
+      {/* Delete Confirmation Modal */}
+      {reminderToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <Card className="w-full max-w-sm shadow-2xl border-primary/20 animate-in zoom-in-95 duration-200">
+            <CardContent className="p-6">
+              <div className="text-center space-y-4">
+                <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-2">
+                  <Trash2 className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-bold text-foreground">Remove Reminder?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Are you sure you want to delete <span className="font-semibold text-foreground">"{reminderToDelete.title}"</span>? This action cannot be undone.
+                </p>
+                <div className="flex gap-3 pt-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 rounded-full"
+                    onClick={() => setReminderToDelete(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    className="flex-1 rounded-full shadow-lg shadow-destructive/20"
+                    onClick={confirmDelete}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      )}
     </div>
   );
 }
+

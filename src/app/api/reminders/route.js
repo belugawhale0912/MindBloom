@@ -4,6 +4,8 @@ import path from 'path';
 
 const dataFilePath = path.join(process.cwd(), 'data.json');
 
+export const dynamic = 'force-dynamic';
+
 async function getDb() {
   try {
     const fileContent = await fs.readFile(dataFilePath, 'utf8');
@@ -29,11 +31,23 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const updatedReminders = await request.json();
-  console.log(`[API] Received POST request. New reminders count: ${updatedReminders.length}`);
-  const db = await getDb();
-  db.reminders = updatedReminders;
-  await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-  console.log(`[API] Sync successful. Data written to ${dataFilePath}`);
-  return NextResponse.json({ success: true });
+  try {
+    const updatedReminders = await request.json();
+    
+    // Basic validation
+    if (!Array.isArray(updatedReminders)) {
+      return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
+    }
+
+    console.log(`[API] Received POST request. New reminders count: ${updatedReminders.length}`);
+    const db = await getDb();
+    db.reminders = updatedReminders;
+    await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
+    console.log(`[API] Sync successful. Data written to ${dataFilePath}`);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[API] POST Error:", error);
+    return NextResponse.json({ error: "Failed to save data" }, { status: 500 });
+  }
 }
+
