@@ -1,11 +1,33 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 
 const BOTPRESS_WEBCHAT_SRC =
   "https://cdn.botpress.cloud/webchat/v3.6/shareable.html?configUrl=https://files.bpcontent.cloud/2026/04/03/07/20260403075311-1UCF1L3N.json";
 
 export default function AICompanion() {
+  const [themeMode, setThemeMode] = useState("light");
+
+  useEffect(() => {
+    const updateThemeMode = () => {
+      const isDark = document.documentElement.classList.contains("dark");
+      setThemeMode(isDark ? "dark" : "light");
+    };
+
+    updateThemeMode();
+
+    const observer = new MutationObserver(updateThemeMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const iframeSrc = `${BOTPRESS_WEBCHAT_SRC}&themeMode=${themeMode}`;
+
   return (
     <div className="flex flex-col gap-4 h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] min-h-[420px] animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
       <div className="flex items-start gap-3 rounded-2xl border border-border/50 bg-secondary/25 p-4 text-sm text-muted-foreground">
@@ -19,7 +41,7 @@ export default function AICompanion() {
       <div className="flex-1 min-h-0 flex flex-col rounded-3xl border border-border/60 shadow-sm overflow-hidden bg-card">
         <iframe
           title="AI Companion chat"
-          src={BOTPRESS_WEBCHAT_SRC}
+          src={iframeSrc}
           className="h-full w-full min-h-[400px] border-0 bg-background"
           allow="microphone; autoplay; clipboard-write"
         />

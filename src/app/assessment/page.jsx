@@ -514,7 +514,7 @@ export default function Assessment() {
               </ul>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-3 max-w-md mx-auto w-full pb-8">
+          <CardFooter className="flex flex-col gap-3 max-w-md mx-auto w-full pb-8 bg-transparent border-t-0">
             <Button className="w-full rounded-full" asChild>
               <a href="/companion">Chat with AI Companion</a>
             </Button>
