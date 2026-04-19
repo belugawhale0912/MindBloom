@@ -14,10 +14,12 @@ import {
   Clock,
   Image as ImageIcon,
   X,
-  Maximize2
+  Loader2,
+  Pin
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import MediaViewer from "@/components/media-viewer";
 
 export default function CalmKit() {
   const [notes, setNotes] = useState([]);
@@ -26,8 +28,14 @@ export default function CalmKit() {
   const [isSaving, setIsSaving] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [newItemData, setNewItemData] = useState({ title: "", description: "", type: "technique", file: null });
-  const [viewerItem, setViewerItem] = useState(null); // Full-screen Lightbox item
+  const [viewerItem, setViewerItem] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  // Keep a live ref so drag handlers always see the current type
+  const newItemDataRef = useRef(newItemData);
+  useEffect(() => { newItemDataRef.current = newItemData; }, [newItemData]);
+
 
   useEffect(() => {
     fetch("/api/kit")
@@ -47,9 +55,25 @@ export default function CalmKit() {
     }
   };
 
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    // Use the live ref so we always read the current type, not a stale closure
+    const currentType = newItemDataRef.current.type;
+    const isVideo = currentType === "video";
+    const isPhoto = currentType === "photo";
+    if ((isVideo && file.type.startsWith("video/")) || (isPhoto && file.type.startsWith("image/"))) {
+      setNewItemData((prev) => ({ ...prev, file }));
+    }
+  }, []);
+
   const handleAddItem = async () => {
     if (!newItemData.title.trim() && !newItemData.file) return;
 
+    setIsUploading(true);
     try {
       let finalData = { ...newItemData };
 
@@ -94,6 +118,8 @@ export default function CalmKit() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -242,6 +268,12 @@ export default function CalmKit() {
                </div>
             </div>
           ))}
+          {items.filter(item => item.type === "video").length === 0 && (
+            <div className="col-span-full py-16 border-2 border-dashed border-border/50 rounded-[3rem] flex flex-col items-center justify-center text-muted-foreground bg-muted/5 group hover:border-indigo-500/20 transition-colors">
+               <PlaySquare className="h-12 w-12 mb-4 opacity-10 group-hover:opacity-30 transition-opacity" />
+               <p className="text-sm font-medium tracking-tight">Your peace sanctuary is waiting.</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -285,44 +317,84 @@ export default function CalmKit() {
         </div>
       </section>
 
-      {/* Notes to Self (Modern Board) */}
+      {/* Notes to Self — Corkboard */}
       <section className="space-y-6 pt-8 border-t border-border/50">
         <h3 className="font-heading font-bold text-2xl flex items-center gap-3">
           <StickyNote className="h-7 w-7 text-amber-500" /> Notes to Self
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {notes.map((note, idx) => (
-            <Card 
-              key={note.id} 
-              className="border-0 shadow-sm hover:shadow-xl transition-all duration-500 relative group overflow-hidden bg-card/60 backdrop-blur-sm rounded-[2rem] group"
-            >
-              <CardContent className="p-8 pb-10">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/5 transition-all h-8 w-8 rounded-full" 
-                  onClick={() => handleDeleteNote(note.id)}
+        {/* Corkboard */}
+        <div
+          className="relative rounded-[2.5rem] p-6 md:p-8"
+          style={{
+            background: "linear-gradient(135deg, hsl(var(--muted)/0.6) 0%, hsl(var(--card)/0.8) 100%)",
+            boxShadow: "inset 0 2px 12px rgba(0,0,0,0.08), 0 4px 24px rgba(0,0,0,0.06)",
+            border: "1px solid hsl(var(--border)/0.4)",
+          }}
+        >
+          {notes.length === 0 && (
+            <div className="py-14 flex flex-col items-center justify-center text-muted-foreground/50 gap-3">
+              <Pin className="h-8 w-8 opacity-20" />
+              <p className="text-sm font-medium">Your corkboard is empty — pin something kind to yourself.</p>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {notes.map((note, idx) => {
+              const pinColors = ['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6'];
+              const noteColors = [
+                'hsl(48 96% 96%)',
+                'hsl(210 100% 97%)',
+                'hsl(142 76% 96%)',
+                'hsl(280 100% 97%)',
+                'hsl(0 86% 97%)',
+              ];
+              const pin = pinColors[idx % pinColors.length];
+              const bg  = noteColors[idx % noteColors.length];
+              const rotate = (idx % 2 === 0 ? -1 : 1) * (1 + (idx % 3) * 0.5);
+              return (
+                <div
+                  key={note.id}
+                  className="relative group transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                  style={{ transform: `rotate(${rotate}deg)` }}
                 >
-                   <Trash2 className="h-4 w-4" />
-                </Button>
-                <div 
-                  className="w-8 h-1 rounded-full mb-6 opacity-40 group-hover:opacity-100 transition-opacity"
-                  style={{ backgroundColor: idx % 3 === 0 ? '#fbbf24' : idx % 3 === 1 ? '#38bdf8' : '#4ade80' }}
-                />
-                <p className="font-medium text-lg text-foreground italic leading-relaxed">
-                  "{note.content}"
-                </p>
-                <div className="absolute bottom-6 left-8 flex items-center gap-1.5 opacity-40 group-hover:opacity-80 transition-all font-bold tracking-tighter text-[10px] uppercase">
-                  <Clock className="w-3 h-3" />
-                  {note.date}
+                  {/* Pin */}
+                  <div
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center"
+                  >
+                    <div
+                      className="w-5 h-5 rounded-full shadow-md border-2 border-white/60 group-hover:scale-110 transition-transform"
+                      style={{ backgroundColor: pin }}
+                    />
+                    <div className="w-0.5 h-3 bg-black/20" />
+                  </div>
+
+                  <div
+                    className="rounded-2xl p-6 pt-8 pb-10 shadow-md"
+                    style={{ backgroundColor: bg }}
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all h-7 w-7 rounded-full"
+                      onClick={() => handleDeleteNote(note.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <p className="font-medium text-base text-zinc-800 italic leading-relaxed">
+                      &ldquo;{note.content}&rdquo;
+                    </p>
+                    <div className="mt-4 flex items-center gap-1.5 text-zinc-400 text-[10px] font-bold uppercase tracking-widest">
+                      <Clock className="w-3 h-3" />
+                      {note.date}
+                    </div>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              );
+            })}
+          </div>
         </div>
 
-        <div className="relative mt-8 group">
+        <div className="relative mt-6 group">
           <Textarea
             placeholder="Write a gentle nudge to your future self..."
             value={newNoteText}
@@ -330,12 +402,11 @@ export default function CalmKit() {
             disabled={isSaving}
             className="min-h-[160px] text-lg resize-none p-8 pb-20 bg-card rounded-[2.5rem] border-border/50 focus-visible:ring-primary/20 shadow-inner group-hover:border-primary/20 transition-all duration-500"
           />
-
           <div className="absolute bottom-6 right-8">
-            <Button 
-              size="lg" 
-              className="rounded-full shadow-2xl h-12 px-8 font-bold transition-transform hover:-translate-y-1 active:scale-95" 
-              onClick={handleSaveNote} 
+            <Button
+              size="lg"
+              className="rounded-full shadow-2xl h-12 px-8 font-bold transition-transform hover:-translate-y-1 active:scale-95"
+              onClick={handleSaveNote}
               disabled={isSaving || !newNoteText.trim()}
             >
               <Save className="h-5 w-5 mr-2" /> {isSaving ? "Whispering..." : "Save Note"}
@@ -398,9 +469,17 @@ export default function CalmKit() {
                      </div>
                    ) : (
                      <div className="space-y-4">
-                       <div 
-                         className="border-2 border-dashed border-border/80 rounded-[2.5rem] p-10 text-center cursor-pointer hover:bg-primary/5 hover:border-primary/20 transition-all duration-300 group/drop"
+                       <div
+                         className={cn(
+                           "border-2 border-dashed rounded-[2.5rem] p-10 text-center cursor-pointer transition-all duration-300 group/drop",
+                           isDragging
+                             ? "border-primary bg-primary/10 scale-[1.02]"
+                             : "border-border/80 hover:bg-primary/5 hover:border-primary/20"
+                         )}
                          onClick={() => fileInputRef.current?.click()}
+                         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                         onDragLeave={() => setIsDragging(false)}
+                         onDrop={handleDrop}
                        >
                          <input 
                            type="file" 
@@ -443,8 +522,10 @@ export default function CalmKit() {
                    )}
                  </div>
                  
-                 <Button size="lg" className="w-full h-16 rounded-[1.8rem] text-lg font-bold shadow-2xl transition-transform hover:-translate-y-1 active:scale-95" onClick={handleAddItem} disabled={!newItemData.title.trim() && !newItemData.file}>
-                    {newItemData.file ? 'Begin Upload' : 'Confirm & Add'}
+                 <Button size="lg" className="w-full h-16 rounded-[1.8rem] text-lg font-bold shadow-2xl transition-transform hover:-translate-y-1 active:scale-95" onClick={handleAddItem} disabled={isUploading || (!newItemData.title.trim() && !newItemData.file)}>
+                    {isUploading ? (
+                      <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Uploading...</>
+                    ) : newItemData.file ? 'Begin Upload' : 'Confirm & Add'}
                  </Button>
               </CardContent>
            </Card>
@@ -453,41 +534,12 @@ export default function CalmKit() {
 
       {/* Lightbox: Media Viewer */}
       {viewerItem && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-2xl p-4 md:p-12 animate-in fade-in duration-500">
-           <Button 
-             variant="ghost" 
-             size="icon" 
-             className="absolute top-6 right-6 z-[210] text-white/60 hover:text-white hover:bg-white/10 rounded-full h-12 w-12"
-             onClick={() => setViewerItem(null)}
-           >
-              <X className="h-8 w-8" />
-           </Button>
-
-           <div className="w-full h-full max-w-6xl flex flex-col items-center justify-center gap-8 group/viewer">
-              <div className="relative w-full flex-1 flex items-center justify-center animate-in zoom-in-95 duration-500">
-                {viewerItem.type === "video" ? (
-                  <video 
-                    src={viewerItem.url} 
-                    controls 
-                    autoPlay 
-                    className="w-full h-full max-h-[70vh] object-contain rounded-2xl shadow-[0_0_100px_rgba(0,0,0,0.5)]" 
-                  />
-                ) : (
-                  <img 
-                    src={viewerItem.url} 
-                    alt={viewerItem.title} 
-                    className="w-full h-full max-h-[70vh] object-contain rounded-2xl shadow-[0_0_100px_rgba(0,0,0,0.5)] transition-transform duration-700 hover:scale-105" 
-                  />
-                )}
-              </div>
-              
-              <div className="text-center space-y-2 max-w-2xl px-4 animate-in slide-in-from-bottom-4 duration-700">
-                <h3 className="text-3xl font-heading font-black text-white tracking-tight">{viewerItem.title}</h3>
-                <p className="text-zinc-400 text-lg italic">{viewerItem.description || "A peaceful moment preserved."}</p>
-                <div className="h-1 w-12 bg-primary mx-auto mt-6 rounded-full opacity-60" />
-              </div>
-           </div>
-        </div>
+        <MediaViewer
+          item={viewerItem}
+          allItems={items.filter(i => i.type === "photo" || i.type === "video")}
+          onClose={() => setViewerItem(null)}
+          onNavigate={setViewerItem}
+        />
       )}
       
       {/* Floating Add Button */}
