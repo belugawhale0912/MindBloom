@@ -12,6 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { X, Delete } from "lucide-react";
 
 const CATEGORIES = ["School", "Family", "Social", "Work", "Health", "Finances"];
 
@@ -35,6 +43,61 @@ export default function MoodTracker() {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categoryImpacts, setCategoryImpacts] = useState({});
   const [note, setNote] = useState("");
+
+  const [secureNote, setSecureNote] = useState("");
+  const [isSecureMode, setIsSecureMode] = useState(false);
+  const [pinMode, setPinMode] = useState("manual"); // 'auto' | 'manual'
+  const [savedAutoPin, setSavedAutoPin] = useState("");
+  
+  const [unlockedEntries, setUnlockedEntries] = useState([]);
+  
+  const [isKeypadOpen, setIsKeypadOpen] = useState(false);
+  const [keypadContext, setKeypadContext] = useState(null);
+  const [keypadPin, setKeypadPin] = useState("");
+
+  const handleKeypadSubmit = (pin) => {
+    if (keypadContext === 'auto') {
+      setSavedAutoPin(pin);
+      setIsKeypadOpen(false);
+    } else if (keypadContext === 'manual') {
+      setIsKeypadOpen(false);
+      handleSave(pin);
+    } else {
+      const entryId = keypadContext;
+      const entry = pastEntries.find(e => (e.id || e.timestamp) === entryId);
+      if (entry && pin === entry.pin) {
+        setUnlockedEntries(prev => [...prev, entryId]);
+        setIsKeypadOpen(false);
+      } else {
+        alert("Incorrect PIN");
+        setKeypadPin("");
+      }
+    }
+  };
+
+  const handleKeypadPress = (digit) => {
+    if (keypadPin.length < 6) {
+      const newPin = keypadPin + digit;
+      setKeypadPin(newPin);
+      if (newPin.length === 6) {
+        setTimeout(() => {
+          handleKeypadSubmit(newPin);
+        }, 150);
+      }
+    }
+  };
+
+  const handleKeypadDelete = () => {
+    if (keypadPin.length > 0) {
+      setKeypadPin(keypadPin.slice(0, -1));
+    }
+  };
+
+  const openKeypad = (context) => {
+    setKeypadContext(context);
+    setKeypadPin("");
+    setIsKeypadOpen(true);
+  };
 
   const [pastEntries, setPastEntries] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -64,8 +127,17 @@ export default function MoodTracker() {
     }
   }, [moodValue, currentTier]);
 
-  const handleSave = async () => {
+  const handleSave = async (overridePin = null) => {
     if (isSaving) return;
+
+    let finalPin = null;
+    if (isSecureMode) {
+      finalPin = pinMode === 'auto' ? savedAutoPin : overridePin;
+      if (!finalPin || finalPin.length !== 6 || !/^\d+$/.test(finalPin)) {
+        return;
+      }
+    }
+
     setIsSaving(true);
     const now = new Date();
 
@@ -83,9 +155,12 @@ export default function MoodTracker() {
       emoji: fallbackEmoji,
       level: Math.round(moodValue[0] / 2), // map 0-10 back to 1-5 scale for backwards compatibility if needed
       tags: tagsArray,
-      note: note,
+      note: isSecureMode ? null : note,
       detailedScore: moodValue[0], // Optional new field
       suggestion: dynamicInsight,
+      isLocked: isSecureMode,
+      secureNote: isSecureMode ? secureNote : null,
+      pin: isSecureMode ? finalPin : null,
     };
 
     try {
@@ -103,6 +178,9 @@ export default function MoodTracker() {
         setSelectedCategories([]);
         setCategoryImpacts({});
         setNote("");
+        setSecureNote("");
+        setIsSecureMode(false);
+        setPinMode("manual");
       }
     } catch (err) {
       console.error("Failed to save mood:", err);
@@ -273,24 +351,85 @@ export default function MoodTracker() {
                 </p>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-sm font-semibold text-foreground">
-                  Care to add more details? (Optional)
-                </label>
-                <Textarea
-                  placeholder="Jot down a few thoughts..."
-                  className="resize-none h-28 rounded-2xl bg-secondary/20 border-border focus-visible:ring-primary/30"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-foreground">
+                    Care to add more details? (Optional)
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="secure-mode"
+                      checked={isSecureMode}
+                      onCheckedChange={setIsSecureMode}
+                    />
+                    <label htmlFor="secure-mode" className="text-xs cursor-pointer font-medium text-muted-foreground">Secure Brain Dump mode</label>
+                  </div>
+                </div>
+
+                {isSecureMode ? (
+                  <div className="space-y-4 p-4 border border-primary/20 bg-primary/5 rounded-2xl animate-in fade-in zoom-in-95 duration-300">
+                    <Textarea
+                      placeholder="Write your secure thoughts here..."
+                      className="resize-none h-28 rounded-xl bg-background border-border focus-visible:ring-primary"
+                      value={secureNote}
+                      onChange={(e) => setSecureNote(e.target.value)}
+                    />
+                    
+                    <div className="space-y-3 pt-2 border-t border-primary/10">
+                      <div className="flex items-center justify-between">
+                        <label htmlFor="auto-pin" className="text-sm cursor-pointer font-medium text-foreground">Auto-apply 6-digit PIN</label>
+                        <Switch
+                          id="auto-pin"
+                          checked={pinMode === "auto"}
+                          onCheckedChange={(checked) => setPinMode(checked ? "auto" : "manual")}
+                        />
+                      </div>
+
+                      {pinMode === "auto" ? (
+                        <div className="animate-in slide-in-from-top-2 fade-in">
+                          {savedAutoPin.length === 6 ? (
+                             <div className="flex items-center gap-3">
+                               <span className="text-sm border border-primary/30 px-3 py-1.5 rounded-full bg-primary/10 font-mono tracking-widest text-primary">••••••</span>
+                               <Button variant="outline" size="sm" onClick={() => openKeypad('auto')} className="rounded-full">Change PIN</Button>
+                             </div>
+                          ) : (
+                             <Button onClick={() => openKeypad('auto')} className="rounded-full" variant="secondary">Set Auto PIN</Button>
+                          )}
+                          <p className="text-[11px] text-muted-foreground mt-2 leading-tight">
+                            This PIN will be seamlessly applied to future secure entries once saved.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="animate-in slide-in-from-top-2 fade-in">
+                          <p className="text-xs text-muted-foreground mt-1">
+                            You will be asked to enter a 6-digit PIN when you save.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <Textarea
+                    placeholder="Jot down a few thoughts..."
+                    className="resize-none h-28 rounded-2xl bg-secondary/20 border-border focus-visible:ring-primary/30"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                )}
               </div>
 
               <Button
-                className="w-full rounded-full h-12 text-base shadow-sm font-semibold"
-                onClick={handleSave}
-                disabled={isSaving}
+                className="w-full rounded-full h-12 text-base shadow-sm font-semibold transition-all"
+                onClick={() => {
+                  if (isSecureMode && pinMode === 'manual') {
+                    openKeypad('manual');
+                  } else {
+                    handleSave();
+                  }
+                }}
+                disabled={isSaving || (isSecureMode && pinMode === 'auto' && savedAutoPin.length !== 6)}
               >
-                {isSaving ? "Saving..." : "Save Today's Mood"}
+                {isSaving ? "Saving..." : (isSecureMode && pinMode === 'manual') ? "Lock & Save" : "Save Today's Mood"}
               </Button>
             </div>
           )}
@@ -342,8 +481,35 @@ export default function MoodTracker() {
                   {entry.suggestion && (
                     <p className="text-sm text-primary font-medium mt-3 bg-primary/10 p-2.5 rounded-lg border border-primary/20">{entry.suggestion}</p>
                   )}
-                  {entry.note && (
-                    <p className="text-sm text-muted-foreground mt-2 bg-secondary/20 p-2.5 rounded-lg">{entry.note}</p>
+                  {entry.isLocked ? (
+                    unlockedEntries.includes(entry.id || entry.timestamp) ? (
+                      <div className="mt-3 bg-primary/5 border border-primary/20 p-3 rounded-xl animate-in fade-in zoom-in-95">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="text-sm">🔓</span>
+                          <span className="text-xs font-semibold text-primary uppercase tracking-wider">Secure Note Unlocked</span>
+                        </div>
+                        <p className="text-sm text-foreground leading-relaxed pl-1 whitespace-pre-wrap">{entry.secureNote}</p>
+                      </div>
+                    ) : (
+                      <div className="mt-3 bg-secondary/30 border border-border/50 p-3 rounded-xl flex items-center justify-between gap-3">
+                         <div className="flex items-center gap-2">
+                           <span className="text-sm">🔒</span>
+                           <span className="text-sm font-semibold text-foreground">Locked Entry</span>
+                         </div>
+                         <Button
+                           size="sm"
+                           variant="secondary"
+                           className="font-medium rounded-full px-5"
+                           onClick={() => openKeypad(entry.id || entry.timestamp)}
+                         >
+                           Unlock
+                         </Button>
+                      </div>
+                    )
+                  ) : (
+                    entry.note && (
+                      <p className="text-sm text-muted-foreground mt-2 bg-secondary/20 p-2.5 rounded-lg whitespace-pre-wrap">{entry.note}</p>
+                    )
                   )}
                 </div>
               </CardContent>
@@ -351,6 +517,56 @@ export default function MoodTracker() {
           ))}
         </div>
       </div>
+
+      <Dialog open={isKeypadOpen} onOpenChange={setIsKeypadOpen}>
+        <DialogContent className="sm:max-w-xs p-6 bg-background rounded-3xl" showCloseButton={false}>
+          <div className="flex justify-between items-center mb-6">
+            <DialogTitle className="text-xl font-heading font-medium">
+              {keypadContext === 'auto' ? 'Set Auto PIN' : keypadContext === 'manual' ? 'Enter PIN to Save' : 'Unlock Entry'}
+            </DialogTitle>
+            <Button variant="ghost" size="icon" onClick={() => setIsKeypadOpen(false)} className="rounded-full">
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+
+          <div className="flex justify-center gap-4 mb-10">
+            {[...Array(6)].map((_, i) => (
+              <div 
+                key={i} 
+                className={`w-4 h-4 rounded-full transition-all duration-300 ${i < keypadPin.length ? 'bg-primary scale-110' : 'bg-secondary border border-border'}`}
+              />
+            ))}
+          </div>
+
+          <div className="grid grid-cols-3 gap-y-4 gap-x-6 mx-auto max-w-[240px]">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+              <Button
+                key={num}
+                variant="outline"
+                className="w-16 h-16 rounded-full text-2xl font-medium border-border/50 hover:bg-secondary active:scale-95 transition-all shadow-sm"
+                onClick={() => handleKeypadPress(num.toString())}
+              >
+                {num}
+              </Button>
+            ))}
+            <div />
+            <Button
+              variant="outline"
+              className="w-16 h-16 rounded-full text-2xl font-medium border-border/50 hover:bg-secondary active:scale-95 transition-all shadow-sm"
+              onClick={() => handleKeypadPress("0")}
+            >
+              0
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-16 h-16 rounded-full flex items-center justify-center hover:bg-destructive/10 hover:text-destructive active:scale-95 transition-all"
+              onClick={handleKeypadDelete}
+            >
+              <Delete className="w-7 h-7" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
