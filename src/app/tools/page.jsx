@@ -35,9 +35,6 @@ export default function GuidedTools() {
   const [breathingMode, setBreathingMode] = useState("Box Breathing");
   const [selectedMeditationVideoId, setSelectedMeditationVideoId] = useState("");
   const [meditationTopic, setMeditationTopic] = useState("Morning Mindfulness");
-  const [meditationVideos, setMeditationVideos] = useState([]);
-  const [isLoadingMeditation, setIsLoadingMeditation] = useState(false);
-  const [meditationError, setMeditationError] = useState("");
   const [journalContent, setJournalContent] = useState("");
   const [savedJournals, setSavedJournals] = useState([]);
   const [isSavingJournal, setIsSavingJournal] = useState(false);
@@ -53,23 +50,23 @@ export default function GuidedTools() {
   const fallbackMeditationVideos = {
     "Morning Mindfulness": [
       { id: "inpok4MKVLM", title: "5-Minute Meditation You Can Do Anywhere", channelTitle: "Goodful" },
-      { id: "ZToicYcHIOU", title: "10 Minute Morning Meditation", channelTitle: "Great Meditation" },
+      { id: "ZToicYcHIOU", title: "Daily Calm | 10 Minute Mindfulness Meditation | Be Present", channelTitle: "Calm" },
     ],
     "Body Scan Meditation": [
-      { id: "QS2yDmWk0vs", title: "10 Minute Body Scan Meditation", channelTitle: "The Honest Guys" },
-      { id: "15q-N-_kkrU", title: "Guided Body Scan Meditation", channelTitle: "Mindful Peace" },
+      { id: "aH72AScs0qk", title: "10 Minute Body Scan Meditation", channelTitle: "Priory" },
+      { id: "15q-N-_kkrU", title: "Body Scan Exercise, Jon Kabat-Zinn", channelTitle: "Be You Fully" },
     ],
     "Sleep Meditation": [
-      { id: "aEqlQvczMJQ", title: "Guided Sleep Meditation", channelTitle: "The Honest Guys" },
-      { id: "69o0P7s8GHE", title: "Sleep Meditation for Deep Rest", channelTitle: "Great Meditation" },
+      { id: "aEqlQvczMJQ", title: "10-Minute Meditation For Sleep", channelTitle: "Goodful" },
+      { id: "69o0P7s8GHE", title: "Sleep Talk Down Guided Meditation: Fall Asleep Faster with Sleep Music & Spoken Word Hypnosis", channelTitle: "Jason Stephenson - Guided Sleep Meditation " },
     ],
     "Anxiety Relief Meditation": [
-      { id: "O-6f5wQXSu8", title: "Guided Meditation for Anxiety", channelTitle: "The Honest Guys" },
-      { id: "MIr3RsUWrdo", title: "10 Minute Meditation for Anxiety", channelTitle: "Goodful" },
+      { id: "O-6f5wQXSu8", title: "10-Minute Meditation For Anxiety | Goodful", channelTitle: "Goodful" },
+      { id: "MIr3RsUWrdo", title: "20 Minute Guided Meditation for Reducing Anxiety and Stress--Clear the Clutter to Calm Down", channelTitle: "The Mindful Movement" },
     ],
     "Visualization Meditation": [
-      { id: "1vx8iUvfyCY", title: "Guided Visualization Meditation", channelTitle: "Michael Sealey" },
-      { id: "kM5vM4QpC3Q", title: "Visualization Meditation for Calm", channelTitle: "Great Meditation" },
+      { id: "Z_u-P2hqL8M", title: "Guided Manifestation Visualization Meditation ✨", channelTitle: "Alina Align" },
+      { id: "FTuqv2fYbGc", title: "How To Manifest Anything! Visualize What You Want (POWERFUL GUIDED MEDITATION!)", channelTitle: "Fearless Soul" },
     ],
   };
 
@@ -148,103 +145,11 @@ export default function GuidedTools() {
     return () => clearInterval(interval);
   }, [isBreathing, breathingMode]);
 
-  useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
-
-    if (!apiKey) {
-      setMeditationError("Using built-in videos because YouTube API key is not configured.");
-      setMeditationVideos([]);
-      return;
-    }
-
-    const fetchMeditationVideos = async () => {
-      try {
-        setIsLoadingMeditation(true);
-        setMeditationError("");
-        const params = new URLSearchParams({
-          part: "snippet",
-          type: "video",
-          q: meditationTopic,
-          maxResults: "6",
-          videoEmbeddable: "true",
-          safeSearch: "strict",
-          key: apiKey,
-        });
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params.toString()}`);
-        if (!res.ok) {
-          throw new Error("Failed to load meditation videos.");
-        }
-        const data = await res.json();
-        const rawVideos = (data.items || []).filter((item) => item?.id?.videoId);
-
-        if (rawVideos.length === 0) {
-          setMeditationVideos([]);
-          setMeditationError("No API videos found. Showing built-in videos.");
-          return;
-        }
-
-        const videoIds = rawVideos.map((item) => item.id.videoId).join(",");
-        const detailsParams = new URLSearchParams({
-          part: "status",
-          id: videoIds,
-          key: apiKey,
-        });
-        const detailsRes = await fetch(
-          `https://www.googleapis.com/youtube/v3/videos?${detailsParams.toString()}`,
-        );
-
-        if (!detailsRes.ok) {
-          throw new Error("Failed to verify meditation videos.");
-        }
-
-        const detailsData = await detailsRes.json();
-        const validVideoIds = new Set(
-          (detailsData.items || [])
-            .filter((item) => {
-              const status = item.status || {};
-              return (
-                status.privacyStatus === "public" &&
-                status.embeddable === true &&
-                status.uploadStatus === "processed"
-              );
-            })
-            .map((item) => item.id),
-        );
-
-        const videos = rawVideos.filter((item) => validVideoIds.has(item.id.videoId));
-        setMeditationVideos(videos);
-        if (videos.length === 0) {
-          setMeditationError(
-            "No open/public API videos found. Showing built-in videos.",
-          );
-        }
-      } catch (error) {
-        setMeditationVideos([]);
-        setMeditationError("Unable to load API videos right now. Showing built-in videos.");
-        console.error(error);
-      } finally {
-        setIsLoadingMeditation(false);
-      }
-    };
-
-    fetchMeditationVideos();
-  }, [meditationTopic]);
-
   const availableMeditationVideos = useMemo(() => {
-    if (meditationVideos.length > 0) {
-      return meditationVideos.map((video) => ({
-        id: video.id.videoId,
-        title: video.snippet.title,
-        channelTitle: video.snippet.channelTitle,
-        isApi: true,
-      }));
-    }
-
     return (fallbackMeditationVideos[meditationTopic] || []).map((video) => ({
       ...video,
-      isApi: false,
     }));
-  }, [meditationVideos, meditationTopic]);
+  }, [meditationTopic]);
 
   useEffect(() => {
     if (availableMeditationVideos.length === 0) {
@@ -443,14 +348,6 @@ export default function GuidedTools() {
               </select>
             </CardContent>
           </Card>
-
-          {isLoadingMeditation && (
-            <p className="text-sm text-muted-foreground">Loading YouTube videos...</p>
-          )}
-
-          {!isLoadingMeditation && meditationError && (
-            <p className="text-sm text-muted-foreground">{meditationError}</p>
-          )}
 
           <Card className="border-0 shadow-sm ring-1 ring-border/50">
             <CardHeader className="pb-2">
