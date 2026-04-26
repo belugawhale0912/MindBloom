@@ -51,7 +51,6 @@ export default function MediaViewer({ item, allItems, onClose, onNavigate }) {
           src={item.url}
           alt={item.title}
           className="absolute inset-0 w-full h-full object-contain"
-          style={{ animation: "gentle-breathing 8s ease-in-out infinite" }}
         />
       )}
 
