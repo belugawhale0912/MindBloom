@@ -30,9 +30,8 @@ export function TopNavbar() {
   useEffect(() => {
     // Listen for watcher updates to show notification dot
     const handleWatcherUpdate = (e) => {
-      // Mock logic: If a reminder was just matched, show the dot
-      // In a real app, this would check a notification queue
-      if (e.detail.status === "Active" && Math.random() > 0.8) {
+      // If a reminder was just matched, show the dot
+      if (e.detail.status === "Active") {
         setHasNotifications(true);
       }
     };
@@ -59,17 +58,16 @@ export function TopNavbar() {
           </Button>
         </Link>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full hidden md:flex text-muted-foreground hover:bg-secondary relative h-10 w-10"
+        <Link
+          href="/reminders"
+          className="rounded-full flex items-center justify-center text-muted-foreground hover:bg-secondary relative h-10 w-10 transition-colors"
           onClick={() => setHasNotifications(false)}
         >
           <Bell className="h-5 w-5" />
           {hasNotifications && (
             <span className="absolute top-2 right-2.5 h-2.5 w-2.5 rounded-full bg-destructive border-2 border-background animate-pulse" />
           )}
-        </Button>
+        </Link>
 
         <UserMenu />
       </div>
