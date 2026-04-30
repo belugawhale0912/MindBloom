@@ -156,22 +156,7 @@ export function Sidebar() {
             })}
           </nav>
 
-          {/* User Section (Optional hint of personality at bottom) */}
-          {!isCollapsed || isOpen ? (
-            <div className="px-6 pt-4 mt-auto border-t border-border/50">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Mindful Journey</p>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="h-1.5 flex-1 bg-secondary rounded-full overflow-hidden">
-                  <div className="h-full w-2/3 bg-primary rounded-full" />
-                </div>
-                <span className="text-[10px] font-bold text-primary">60%</span>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-auto px-2 flex justify-center border-t border-border/50 pt-6">
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            </div>
-          )}
+
         </div>
       </aside>
     </>
