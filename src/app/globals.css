@@ -156,6 +156,43 @@
     animation: glow-pulse 4s ease-in-out infinite;
   }
 
+  @keyframes slide-in-right {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes star-gather {
+    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+    50% { transform: scale(1.2) rotate(180deg); opacity: 0.8; }
+    100% { transform: scale(1) rotate(360deg); opacity: 1; }
+  }
+
+  .animate-star-gather {
+    animation: star-gather 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  @keyframes wave-float {
+    0%, 100% { transform: translateY(0) scaleY(1); }
+    50% { transform: translateY(-5px) scaleY(1.05); }
+  }
+
+  .animate-wave {
+    animation: wave-float 3s ease-in-out infinite;
+  }
+
+  @keyframes progress-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.9); }
+  }
+
+  .animate-progress-glow {
+    animation: progress-glow 2s ease-in-out infinite;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

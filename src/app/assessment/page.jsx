@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -18,9 +18,20 @@ import {
   Moon,
   Zap,
   ArrowLeft,
+  Stars,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts';
 
 const OPTIONS = [
   { label: "Never", score: 0 },
@@ -215,13 +226,26 @@ export default function Assessment() {
   /** @type {number[]} scores 0–3 per question */
   const [answers, setAnswers] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [historyData, setHistoryData] = useState([]);
   /** @type {QuizType} */
   const [currentQuizType, setCurrentQuizType] = useState("Stress Check");
   const [resultInsights, setResultInsights] = useState(
-    /** @type {{ severity: string; totalScore: number; headline: string; body: string; tips: string[] } | null} */ (
+    /** @type {{ severity: string; totalScore: number; headline: string; body: string; tips: string[] } | null} */(
       null
     ),
   );
+
+  // Load history from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("assessment_history");
+    if (saved) {
+      try {
+        setHistoryData(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse history", e);
+      }
+    }
+  }, []);
 
   const quizMeta = ASSESSMENTS[currentQuizType];
   const questions = quizMeta.questions;
@@ -257,6 +281,7 @@ export default function Assessment() {
     const totalScore = answers.reduce((a, b) => a + b, 0);
     const severity = severityFromTotal(totalScore);
     const insights = getInsights(currentQuizType, severity);
+
     setResultInsights({
       severity,
       totalScore,
@@ -267,26 +292,23 @@ export default function Assessment() {
 
     const newAssessment = {
       type: currentQuizType,
-      date: new Date().toISOString(),
-      score: totalScore / 10,
-      totalScore,
-      questionCount: questions.length,
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      score: totalScore,
       severity,
-      answers,
     };
 
-    try {
-      await fetch("/api/assessment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newAssessment),
-      });
-    } catch (err) {
-      console.error(err);
-    } finally {
+    // Save to local history for the chart
+    const updatedHistory = [...historyData, newAssessment].slice(-7); // Keep last 7
+    setHistoryData(updatedHistory);
+    localStorage.setItem("assessment_history", JSON.stringify(updatedHistory));
+
+    // Show celebration before results
+    setView("celebrating");
+
+    setTimeout(() => {
       setIsSaving(false);
       setView("result");
-    }
+    }, 2500);
   };
 
   const severityBadgeClass = useMemo(() => {
@@ -367,13 +389,13 @@ export default function Assessment() {
       )}
 
       {view === "active" && (
-        <Card className="border-0 shadow-sm ring-1 ring-border/50">
+        <Card key={`q-${currentQ}`} className="border-0 shadow-sm ring-1 ring-border/50 animate-slide-in-right overflow-hidden">
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
               <Button
                 variant="ghost"
                 size="sm"
-                className="rounded-full -ml-2 text-muted-foreground"
+                className="rounded-full -ml-2 text-muted-foreground hover:bg-secondary/50"
                 onClick={exitToList}
               >
                 <ArrowLeft className="h-4 w-4 mr-1" />
@@ -384,17 +406,21 @@ export default function Assessment() {
               </span>
             </div>
             <div className="flex items-center justify-between mb-4">
-              <Badge variant="outline" className="text-muted-foreground">
+              <Badge variant="outline" className="text-muted-foreground bg-white/50 dark:bg-card/50">
                 {currentQuizType}
               </Badge>
             </div>
-            <div className="w-full bg-secondary h-2 rounded-full overflow-hidden mb-6">
+            <div className="w-full bg-secondary h-2 rounded-full overflow-hidden mb-6 relative">
               <div
-                className="bg-primary h-full transition-all duration-300"
+                className="bg-primary h-full transition-all duration-500 ease-out relative"
                 style={{
                   width: `${((currentQ + 1) / questions.length) * 100}%`,
                 }}
-              />
+              >
+                {/* Glowing Progress Tip */}
+                <div className="absolute right-0 top-0 h-full w-2 bg-white blur-[2px] opacity-80" />
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-primary rounded-full blur-[4px] opacity-50 animate-progress-glow" />
+              </div>
             </div>
             <CardTitle className="text-xl md:text-2xl leading-snug font-heading">
               {questions[currentQ]}
@@ -409,28 +435,28 @@ export default function Assessment() {
                   key={opt.label}
                   onClick={() => handleAnswer(opt.score)}
                   className={cn(
-                    "w-full text-left p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between",
+                    "w-full text-left p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between group active:scale-[0.98]",
                     isSelected
-                      ? "border-primary bg-primary/5"
+                      ? "border-primary bg-primary/5 shadow-inner"
                       : "border-border/50 hover:border-primary/30 hover:bg-secondary/20",
                   )}
                 >
                   <span
                     className={cn(
-                      "font-medium",
-                      isSelected ? "text-primary" : "text-foreground",
+                      "font-medium transition-colors",
+                      isSelected ? "text-primary" : "text-foreground group-hover:text-primary/70",
                     )}
                   >
                     {opt.label}
                   </span>
                   <div
                     className={cn(
-                      "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
-                      isSelected ? "border-primary" : "border-muted-foreground",
+                      "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
+                      isSelected ? "border-primary bg-primary shadow-[0_0_10px_rgba(124,58,237,0.3)]" : "border-muted-foreground",
                     )}
                   >
                     {isSelected && (
-                      <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                      <CheckCircle2 className="w-4 h-4 text-white" />
                     )}
                   </div>
                 </button>
@@ -439,98 +465,173 @@ export default function Assessment() {
           </CardContent>
           <CardFooter className="pt-6 border-t border-border/50 mt-4">
             <Button
-              className="w-full rounded-full h-12"
+              className="w-full rounded-full h-12 shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95"
               onClick={handleNext}
               disabled={answers[currentQ] === undefined || isSaving}
             >
               {isSaving
-                ? "Saving…"
+                ? "Calculating..."
                 : currentQ === questions.length - 1
-                  ? "See results"
-                  : "Next"}
+                  ? "Finish Assessment"
+                  : "Continue"}
             </Button>
           </CardFooter>
         </Card>
       )}
 
+      {view === "celebrating" && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-xl animate-in fade-in duration-700">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full animate-pulse" />
+            <Stars className="h-20 w-20 text-primary animate-star-gather relative z-10" />
+            <Sparkles className="absolute -top-4 -right-4 h-8 w-8 text-amber-400 animate-bounce delay-100" />
+            <Sparkles className="absolute -bottom-4 -left-4 h-6 w-6 text-amber-300 animate-bounce delay-300" />
+          </div>
+          <h3 className="mt-8 text-2xl font-bold text-foreground animate-in slide-in-from-bottom-4 duration-1000">
+            Assessment Complete
+          </h3>
+          <p className="mt-2 text-muted-foreground animate-in slide-in-from-bottom-6 duration-1000 delay-200">
+            Gathering insights for you...
+          </p>
+        </div>
+      )}
+
       {view === "result" && resultInsights && (
-        <Card className="border-0 shadow-sm ring-1 ring-border/50 overflow-hidden">
+        <Card className="border-0 shadow-sm ring-1 ring-border/50 overflow-hidden animate-in fade-in zoom-in-95 duration-700">
           <div
             className={cn(
-              "h-1.5 w-full",
-              resultInsights.severity === "Low" && "bg-emerald-500/80",
-              resultInsights.severity === "Moderate" && "bg-amber-500/80",
-              resultInsights.severity === "High" && "bg-rose-500/80",
+              "h-2 w-full",
+              resultInsights.severity === "Low" && "bg-emerald-500",
+              resultInsights.severity === "Moderate" && "bg-amber-500",
+              resultInsights.severity === "High" && "bg-rose-500",
             )}
           />
-          <CardHeader className="text-center pb-2 pt-8">
-            <div
-              className={cn(
-                "mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4",
-                resultInsights.severity === "Low" && "bg-emerald-500/15",
-                resultInsights.severity === "Moderate" && "bg-amber-500/15",
-                resultInsights.severity === "High" && "bg-rose-500/15",
-              )}
-            >
-              <CheckCircle2
-                className={cn(
-                  "h-8 w-8",
-                  resultInsights.severity === "Low" && "text-emerald-600 dark:text-emerald-400",
-                  resultInsights.severity === "Moderate" &&
-                    "text-amber-600 dark:text-amber-400",
-                  resultInsights.severity === "High" && "text-rose-600 dark:text-rose-400",
-                )}
-              />
+
+          {/* Emotional Visualization Wave */}
+          <div className="w-full h-24 relative overflow-hidden bg-secondary/10">
+            <svg viewBox="0 0 1440 320" className={cn(
+              "absolute bottom-0 w-full h-full animate-wave opacity-50",
+              resultInsights.severity === "Low" ? "text-emerald-500/20" :
+                resultInsights.severity === "Moderate" ? "text-amber-500/20" : "text-rose-500/20"
+            )}>
+              <path
+                fill="currentColor"
+                d={resultInsights.severity === "Low"
+                  ? "M0,160L48,176C96,192,192,224,288,224C384,224,480,192,576,165.3C672,139,768,117,864,128C960,139,1056,181,1152,197.3C1248,213,1344,203,1392,197.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+                  : resultInsights.severity === "Moderate"
+                    ? "M0,160L48,144C96,128,192,96,288,106.7C384,117,480,171,576,186.7C672,203,768,181,864,160C960,139,1056,117,1152,122.7C1248,128,1344,160,1392,176L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+                    : "M0,160L48,160C96,160,192,160,288,186.7C384,213,480,267,576,250.7C672,235,768,149,864,117.3C960,85,1056,107,1152,128C1248,149,1344,171,1392,181.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+                }
+              ></path>
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className={cn(
+                "px-6 py-2 rounded-full backdrop-blur-md border shadow-lg",
+                resultInsights.severity === "Low" ? "bg-emerald-50/50 border-emerald-200 text-emerald-700" :
+                  resultInsights.severity === "Moderate" ? "bg-amber-50/50 border-amber-200 text-amber-700" :
+                    "bg-rose-50/50 border-rose-200 text-rose-700"
+              )}>
+                <span className="text-sm font-bold uppercase tracking-widest">{resultInsights.severity} Intensity</span>
+              </div>
             </div>
-            <Badge
-              variant="outline"
-              className={cn("mx-auto mb-3 border", severityBadgeClass)}
-            >
-              {resultInsights.severity} level · {currentQuizType}
-            </Badge>
+          </div>
+
+          <CardHeader className="text-center pb-2 pt-8">
             <CardTitle className="text-xl md:text-2xl font-heading leading-snug px-2">
               {resultInsights.headline}
             </CardTitle>
             <CardDescription className="text-base text-muted-foreground pt-3 max-w-lg mx-auto">
-              Score summary: {resultInsights.totalScore} / 30 (higher suggests
-              more frequent or intense experiences in this area).
+              Score: {resultInsights.totalScore} / 30
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 pt-2 max-w-2xl mx-auto">
-            <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
-              {resultInsights.body}
+
+          <CardContent className="space-y-8 pt-2 max-w-2xl mx-auto">
+            <p className="text-sm md:text-base text-foreground/90 leading-relaxed text-center italic">
+              "{resultInsights.body.split('. ')[0]}."
             </p>
-            <div className="bg-secondary/40 p-5 rounded-2xl text-left border border-border/50">
-              <h4 className="font-semibold text-sm mb-3 text-foreground">
-                Suggestions for you
+
+            {/* History Trend Chart */}
+            {historyData.length > 1 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-primary" />
+                    Your Progress Trend
+                  </h4>
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Last 7 Sessions</span>
+                </div>
+                <div className="h-[180px] w-full bg-secondary/20 rounded-3xl p-4 border border-border/30">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={historyData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border/50" />
+                      <XAxis
+                        dataKey="date"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 10 }}
+                        className="text-muted-foreground"
+                      />
+                      <YAxis hide domain={[0, 30]} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                        itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="score"
+                        stroke="#7C3AED"
+                        strokeWidth={4}
+                        dot={{ r: 4, fill: '#7C3AED', strokeWidth: 2, stroke: '#fff' }}
+                        activeDot={{ r: 6, strokeWidth: 0 }}
+                        animationDuration={2000}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="text-[11px] text-center text-muted-foreground px-4 leading-relaxed">
+                  Every check-in is a step toward better self-understanding. You're doing great.
+                </p>
+              </div>
+            )}
+
+            <div className="bg-secondary/40 p-6 rounded-3xl text-left border border-border/50 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Brain className="h-12 w-12" />
+              </div>
+              <h4 className="font-bold text-sm mb-4 text-foreground flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-amber-500" />
+                Personalized Suggestions
               </h4>
-              <ul className="space-y-3 text-sm text-muted-foreground">
+              <ul className="space-y-4 text-sm text-muted-foreground">
                 {resultInsights.tips.map((tip) => (
-                  <li key={tip} className="flex gap-3 leading-relaxed">
-                    <span className="text-primary font-bold shrink-0">·</span>
-                    <span>{tip}</span>
+                  <li key={tip} className="flex gap-4 leading-relaxed group/item">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary/40 mt-2 shrink-0 group-hover/item:scale-150 transition-transform" />
+                    <span className="group-hover/item:text-foreground transition-colors">{tip}</span>
                   </li>
                 ))}
               </ul>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-3 max-w-md mx-auto w-full pb-8 bg-transparent border-t-0">
-            <Button className="w-full rounded-full" asChild>
+
+          <CardFooter className="flex flex-col gap-3 max-w-md mx-auto w-full pb-10 bg-transparent border-t-0 px-6">
+            <Button className="w-full rounded-full h-12 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all" asChild>
               <a href="/companion">Chat with AI Companion</a>
             </Button>
-            <Button className="w-full rounded-full" variant="secondary" asChild>
-              <a href="/tools">Open Guided Tools</a>
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full rounded-full text-muted-foreground"
-              onClick={() => {
-                setView("list");
-                setResultInsights(null);
-              }}
-            >
-              Back to assessments
-            </Button>
+            <div className="grid grid-cols-2 gap-3 w-full">
+              <Button className="rounded-full h-11" variant="secondary" asChild>
+                <a href="/tools">Guided Tools</a>
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-full h-11"
+                onClick={() => {
+                  setView("list");
+                  setResultInsights(null);
+                }}
+              >
+                Retake
+              </Button>
+            </div>
           </CardFooter>
         </Card>
       )}
