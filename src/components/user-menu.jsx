@@ -47,7 +47,7 @@ export function UserMenu() {
           </div>
           
           <Link
-            href="/settings"
+            href="/profile"
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary transition-colors group"
           >

@@ -25,7 +25,6 @@ import { useState, useEffect } from "react";
 export default function Settings() {
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
-  const [name, setName] = useState("Alex");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -39,11 +38,8 @@ export default function Settings() {
     fetch("/api/settings")
       .then(res => res.json())
       .then(data => {
-        setName(data.name || "Alex");
         setNotifications(data.notifications !== undefined ? data.notifications : true);
         
-        // Only update dark mode if the API specifically says so AND it differs from local storage
-        // to avoid "resetting" to a default value during initial load
         if (data.darkMode !== undefined) {
           const currentTheme = localStorage.getItem("theme");
           const apiTheme = data.darkMode ? "dark" : "light";
@@ -95,10 +91,6 @@ export default function Settings() {
     }
   };
 
-  const handleProfileSave = () => {
-    saveSettings({ name });
-  };
-
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out pb-10 max-w-2xl">
       <div>
@@ -106,56 +98,24 @@ export default function Settings() {
           Settings
         </h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Manage your account and preferences.
+          Manage your app preferences and experience.
         </p>
       </div>
 
       <div className="space-y-6">
-        {/* Profile */}
-        <Card className="border-0 shadow-sm ring-1 ring-border/50">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <User className="h-5 w-5 text-primary" /> Profile
-            </CardTitle>
-            <CardDescription>Manage your public Profile</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-6">
-              <div className="h-20 w-20 rounded-full bg-secondary text-primary flex items-center justify-center font-bold text-2xl shadow-inner border border-border">
-                <User className="h-10 w-10" />
-              </div>
-              <Button variant="outline" className="rounded-full">
-                Change Avatar
-              </Button>
-            </div>
-
-            <div className="space-y-2 pt-4">
-              <Label htmlFor="name">Display Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="max-w-md rounded-xl"
-              />
-            </div>
-            <Button className="rounded-full mt-2" onClick={handleProfileSave} disabled={isSaving}>
-              {isSaving ? "Saving..." : "Save Profile"}
-            </Button>
-          </CardContent>
-        </Card>
-
         {/* Preferences */}
         <Card className="border-0 shadow-sm ring-1 ring-border/50">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Globe className="h-5 w-5 text-primary" /> Preferences
+              <Globe className="h-5 w-5 text-primary" /> App Preferences
             </CardTitle>
+            <CardDescription>Customize your MindBloom experience</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between p-2">
               <div className="space-y-0.5">
                 <Label className="text-base flex items-center gap-2">
-                  <Moon className="h-4 w-4" /> Dark Mode
+                  <Moon className="h-4 w-4 text-primary" /> Dark Mode
                 </Label>
                 <p className="text-sm text-muted-foreground">
                   Switch to a darker theme for less eye strain
@@ -164,10 +124,10 @@ export default function Settings() {
               <Switch checked={darkMode} onCheckedChange={toggleDarkMode} />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between p-2">
               <div className="space-y-0.5">
                 <Label className="text-base flex items-center gap-2">
-                  <BellRing className="h-4 w-4" /> Notifications
+                  <BellRing className="h-4 w-4 text-primary" /> Notifications
                 </Label>
                 <p className="text-sm text-muted-foreground">
                   Manage how we send you reminders
@@ -176,66 +136,21 @@ export default function Settings() {
               <Switch checked={notifications} onCheckedChange={toggleNotifications} />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between p-2">
               <div className="space-y-0.5">
                 <Label className="text-base flex items-center gap-2">
-                  <Globe className="h-4 w-4" /> Language
+                  <Globe className="h-4 w-4 text-primary" /> Language
                 </Label>
                 <p className="text-sm text-muted-foreground">
                   Preferred language for the interface
                 </p>
               </div>
-              <span className="text-sm font-medium border px-3 py-1 rounded-full cursor-pointer hover:bg-secondary">
+              <span className="text-sm font-semibold bg-secondary/50 text-primary px-4 py-1.5 rounded-full cursor-pointer hover:bg-secondary transition-colors">
                 English (US)
               </span>
             </div>
           </CardContent>
         </Card>
-
-        {/* Account & Security */}
-        <Card className="border-0 shadow-sm ring-1 ring-border/50">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" /> Account & Security
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-secondary/30">
-              <div>
-                <h4 className="font-medium text-foreground">Password</h4>
-                <p className="text-sm text-muted-foreground">
-                  Last changed 3 months ago
-                </p>
-              </div>
-              <Button variant="outline" className="rounded-full">
-                Update Password
-              </Button>
-            </div>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-foreground hover:bg-secondary/50 rounded-xl py-6 mt-2"
-              onClick={() => alert("Logging out...")}
-            >
-              <LogOut className="h-5 w-5 mr-3" /> Log Out of All Devices
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Danger Zone */}
-        <div className="pt-8 px-4 flex flex-col items-center text-center space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Once you delete your account, there is no going back. Please be
-            certain.
-          </p>
-          <Button
-            variant="outline"
-            className="rounded-full border-destructive/20 text-destructive hover:bg-destructive/10"
-            onClick={() => confirm("Are you sure you want to delete your account? This action is permanent.") && alert("Account deletion requested.")}
-          >
-            <Trash2 className="h-4 w-4 mr-2" /> Delete Account
-          </Button>
-        </div>
       </div>
     </div>
   );
