@@ -127,6 +127,35 @@
     animation: gentle-breathing 8s ease-in-out infinite;
   }
 
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    33% { transform: translateY(-10px) rotate(2deg); }
+    66% { transform: translateY(-5px) rotate(-1deg); }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% { filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.4)); }
+    50% { filter: drop-shadow(0 0 25px rgba(139, 92, 246, 0.8)); }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px) rotate(-1deg); }
+    75% { transform: translateX(5px) rotate(1deg); }
+  }
+
+  .animate-shake {
+    animation: shake 0.4s ease-in-out;
+  }
+
+  .animate-glow {
+    animation: glow-pulse 4s ease-in-out infinite;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

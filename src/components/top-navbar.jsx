@@ -19,6 +19,7 @@ const pageTitles = {
   "/assessment": "Self-Assessment",
   "/kit": "My Calm Kit",
   "/sounds": "White Noise Mixer",
+  "/zen": "Zen Space",
   "/settings": "Settings",
 };
 

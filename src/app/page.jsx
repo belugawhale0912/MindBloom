@@ -2,10 +2,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircleHeart, Flower2, Smile, Bell } from "lucide-react";
+import { MessageCircleHeart, Flower2, Smile, Bell, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 const emojis = ["😞", "😐", "🙂", "😊", "😄"];
 
@@ -91,79 +92,86 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-heading font-bold text-foreground">
-            Good morning, {userSettings.name} 🌸
-          </h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Ready for a mindful day? Take it one step at a time.
-          </p>
+    <div className="space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-1000 ease-out">
+      {/* Hero Section - Apple Style */}
+      <section className="text-center space-y-4">
+        <h2 className="text-5xl md:text-6xl font-semibold tracking-tight text-foreground leading-[1.1]">
+          Good morning, {userSettings.name}.
+        </h2>
+        <p className="text-xl md:text-2xl text-muted-foreground font-normal max-w-2xl mx-auto leading-relaxed">
+          Ready for a mindful day? Take it one step at a time.
+        </p>
+        <div className="pt-4">
+          <Badge
+            variant="secondary"
+            className="rounded-full px-4 py-1.5 text-sm font-medium bg-secondary/50 border-none text-foreground"
+          >
+            🔥 {streak}-day check-in streak
+          </Badge>
         </div>
-        <Badge
-          variant="secondary"
-          className="w-fit text-sm px-3 py-1.5 rounded-full flex gap-1.5 font-medium border-primary/10"
-        >
-          <span>🔥</span> {streak}-day check-in streak!
-        </Badge>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <Card className="border-0 shadow-sm ring-1 ring-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">
-                How are you feeling right now?
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center bg-muted/50 p-3 rounded-2xl">
-                {emojis.map((emoji, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleMoodSelect(idx)}
-                    className={`text-3xl transition-transform hover:scale-110 p-2 rounded-full ${selectedMood === idx ? "bg-primary/10 scale-110" : ""}`}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-              {selectedMood !== null && (
-                <p className="text-xs text-center text-muted-foreground mt-3 transition-opacity">
-                  Mood logged! Great job checking in.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+      <div className="grid grid-cols-1 gap-12">
+        {/* Mood Check-in - Large Editorial Card */}
+        <Card className="border-none shadow-none bg-card overflow-hidden rounded-[28px] ring-1 ring-border/50">
+          <CardHeader className="pt-10 px-10 pb-0">
+            <CardTitle className="text-3xl font-semibold tracking-tight">
+              How are you feeling right now?
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-10 pt-8">
+            <div className="flex justify-between items-center max-w-xl mx-auto gap-4">
+              {emojis.map((emoji, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleMoodSelect(idx)}
+                  className={cn(
+                    "text-5xl transition-all duration-300 hover:scale-110 p-4 rounded-full",
+                    selectedMood === idx ? "bg-primary/5 scale-110" : "hover:bg-secondary/40"
+                  )}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            {selectedMood !== null && (
+              <p className="text-sm text-center text-primary font-medium mt-8 animate-in fade-in slide-in-from-bottom-2">
+                Mood logged. Great job checking in.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
-          <Card className="bg-secondary/40 border-0 shadow-sm">
-            <CardContent className="p-6">
-              <p className="text-lg font-medium text-primary text-center italic">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Quote Card - Subtle & Minimal */}
+          <Card className="border-none shadow-none bg-secondary/30 rounded-[28px] flex items-center justify-center p-10 ring-1 ring-border/30">
+            <CardContent className="p-0 text-center space-y-6">
+              <p className="text-2xl font-medium text-foreground leading-snug">
                 "You don't have to control your thoughts. You just have to stop
                 letting them control you."
               </p>
-              <p className="text-right text-xs text-muted-foreground mt-2">
+              <p className="text-sm text-muted-foreground font-medium tracking-wide uppercase">
                 — Dan Millman
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm ring-1 ring-border/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center justify-between">
-                <div>Mini Mood Trend</div>
+          {/* Trend Card - Data Visual */}
+          <Card className="border-none shadow-none bg-card rounded-[28px] ring-1 ring-border/50">
+            <CardHeader className="px-8 pt-8 pb-4">
+              <CardTitle className="text-xl font-semibold flex items-center justify-between">
+                <span>Mood Trend</span>
                 <Link
                   href="/insights"
-                  className="text-xs text-primary font-normal hover:underline"
+                  className="text-sm text-primary font-medium hover:underline flex items-center gap-1"
                 >
                   View full
                 </Link>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="h-[120px] w-full">
-                <ResponsiveContainer width="100%" height={120}>
+            <CardContent className="px-8 pb-8">
+              <div className="h-[140px] w-full">
+                <ResponsiveContainer width="100%" height={140}>
                   <BarChart
                     data={moodData}
                     margin={{ top: 10, right: 0, left: -20, bottom: 0 }}
@@ -173,23 +181,25 @@ export default function Dashboard() {
                       axisLine={false}
                       tickLine={false}
                       tick={{
-                        fontSize: 10,
+                        fontSize: 12,
                         fill: "var(--color-muted-foreground)",
+                        fontWeight: 500
                       }}
                     />
                     <Tooltip
-                      cursor={{ fill: "var(--color-secondary)" }}
+                      cursor={{ fill: "var(--color-secondary)", radius: 6 }}
                       contentStyle={{
-                        borderRadius: "12px",
+                        borderRadius: "16px",
                         border: "none",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                        boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+                        padding: "12px"
                       }}
                     />
                     <Bar
                       dataKey="mood"
                       fill="var(--color-primary)"
-                      radius={[4, 4, 0, 0]}
-                      barSize={20}
+                      radius={[6, 6, 6, 6]}
+                      barSize={24}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -198,82 +208,56 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-3">
-            <p className="font-heading font-semibold text-foreground">
-              Quick Shortcuts
-            </p>
-            <Link href="/companion" className="group">
-              <Card className="border-0 shadow-sm ring-1 ring-border/50 hover:ring-primary/50 transition-all hover:-translate-y-0.5">
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="bg-secondary text-primary p-3 rounded-2xl group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    <MessageCircleHeart className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                      Talk to AI Companion
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Share your thoughts
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href="/tools" className="group">
-              <Card className="border-0 shadow-sm ring-1 ring-border/50 hover:ring-primary/50 transition-all hover:-translate-y-0.5">
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="bg-secondary text-primary p-3 rounded-2xl group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    <Flower2 className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                      Start Breathing Exercise
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Regulate your nervous system
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href="/mood" className="group">
-              <Card className="border-0 shadow-sm ring-1 ring-border/50 hover:ring-primary/50 transition-all hover:-translate-y-0.5">
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="bg-secondary text-primary p-3 rounded-2xl group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    <Smile className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                      Log Detailed Mood
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Track patterns over time
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+        {/* Shortcuts Section - Grid of Rounded Pills */}
+        <section className="space-y-6">
+          <h3 className="text-2xl font-semibold tracking-tight px-2">Quick Shortcuts</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { href: "/companion", icon: MessageCircleHeart, title: "AI Companion", desc: "Share your thoughts" },
+              { href: "/tools", icon: Flower2, title: "Guided Tools", desc: "Regulate your system" },
+              { href: "/zen", icon: Sparkles, title: "Zen Space", desc: "Find your calm" },
+              { href: "/mood", icon: Smile, title: "Log Mood", desc: "Track patterns" },
+            ].map((item) => (
+              <Link key={item.href} href={item.href} className="group">
+                <Card className="border-none shadow-none bg-card rounded-[24px] ring-1 ring-border/50 hover:ring-primary/40 transition-all duration-400 group-hover:-translate-y-1">
+                  <CardContent className="p-6 flex flex-col items-center text-center gap-4">
+                    <div className="bg-secondary/50 text-primary p-4 rounded-2xl group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-400">
+                      <item.icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-foreground text-lg">{item.title}</h4>
+                      <p className="text-xs text-muted-foreground mt-1 font-medium">{item.desc}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
           </div>
+        </section>
 
-          <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-background to-secondary/30">
-            <CardContent className="p-5 flex items-start gap-4">
-              <div className="bg-background text-primary p-2 rounded-xl shadow-sm border border-border">
+        {/* Upcoming Reminder - Modern Banner */}
+        <Card className="border-none shadow-none bg-primary/5 rounded-[24px] ring-1 ring-primary/10">
+          <CardContent className="p-6 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="bg-white dark:bg-card text-primary p-3 rounded-xl shadow-sm border border-primary/10">
                 <Bell className="h-5 w-5" />
               </div>
-              <div className="flex-1">
+              <div>
                 <h3 className="text-sm font-semibold text-foreground">
                   Upcoming Reminder
                 </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5 font-medium">
                   {upcomingReminder.time ? `${upcomingReminder.time} — ${upcomingReminder.title}` : upcomingReminder.title}
                 </p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+            <Link href="/reminders">
+              <Badge variant="outline" className="rounded-full border-primary/20 text-primary px-3 py-1 font-medium hover:bg-primary/5 cursor-pointer">
+                Manage
+              </Badge>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import {
   ClipboardList,
   BriefcaseMedical,
   Music,
+  Sparkles,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -33,6 +34,7 @@ const navItems = [
   { name: "Self-Assessment", href: "/assessment", icon: ClipboardList },
   { name: "My Calm Kit", href: "/kit", icon: BriefcaseMedical },
   { name: "White Noise Mixer", href: "/sounds", icon: Music },
+  { name: "Zen Space", href: "/zen", icon: Sparkles },
 ];
 
 export function Sidebar() {
@@ -114,8 +116,8 @@ export function Sidebar() {
                     isActive
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                       : "text-muted-foreground hover:bg-secondary/80 hover:text-primary",
-                    isCollapsed && !isOpen 
-                      ? "md:w-12 md:h-12 md:justify-center md:mx-auto" 
+                    isCollapsed && !isOpen
+                      ? "md:w-12 md:h-12 md:justify-center md:mx-auto"
                       : "px-4 py-3 gap-3"
                   )}
                 >
@@ -133,7 +135,7 @@ export function Sidebar() {
                       )}
                     />
                   </div>
-                  
+
                   <span className={cn(
                     "font-medium text-sm transition-all duration-300 whitespace-nowrap overflow-hidden",
                     isCollapsed && !isOpen ? "md:opacity-0 md:w-0" : "opacity-100 w-auto"
