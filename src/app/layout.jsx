@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/sidebar";
 import { TopNavbar } from "@/components/top-navbar";
 import { ToastProvider } from "@/components/ui/toast-custom";
 import { ReminderWatcher } from "@/components/reminder-watcher";
+import { ThemeInitializer } from "@/components/theme-initializer";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-heading",
@@ -26,30 +27,10 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       className={cn(`${jakarta.variable} ${inter.variable} h-full antialiased`)}
-
-      // From here used to change the dark mode
-
-      suppressHydrationWarning // to allow react to accept <html class="dark"> from the script without hydration issues
-      // dangerouslySetInnerHTML is used to allow javascript added into the component before rendered using react 
+      suppressHydrationWarning
     >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                  document.documentElement.classList.add('dark');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                }
-              } catch (_) {}
-            `,
-          }}
-        />
-      </head>
-{/* To Here */}
-
       <body className="font-sans h-full flex overflow-hidden bg-background">
+        <ThemeInitializer />
         <ToastProvider>
           <ReminderWatcher />
           <Sidebar />
