@@ -20,25 +20,54 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { X, Delete } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const CATEGORIES = ["School", "Family", "Social", "Work", "Health", "Finances"];
 
-// Define the total number of images you have for each tier
-// Just change these numbers, and name your images 1.jpg, 2.jpg, etc. in the respective folders
-const TIER_IMAGE_COUNTS = {
-  tier1: 3,
-  tier2: 3,
-  tier3: 3,
-  tier4: 3,
+const MOOD_EMOJIS = {
+  0: "💀",
+  1: "😫",
+  2: "😞",
+  3: "🙁",
+  4: "😐",
+  5: "🙂",
+  6: "😊",
+  7: "😄",
+  8: "🤩",
+  9: "😍",
+  10: "🥳",
+};
+
+const MOOD_LABELS = {
+  0: "Rock Bottom",
+  1: "Exhausted",
+  2: "Struggling",
+  3: "A bit down",
+  4: "Meh",
+  5: "Balanced",
+  6: "Content",
+  7: "Cheerful",
+  8: "Wonderful",
+  9: "Radiant",
+  10: "Euphoric",
+};
+
+const MOOD_COLORS = {
+  0: "bg-rose-500/20",
+  1: "bg-rose-400/20",
+  2: "bg-orange-400/20",
+  3: "bg-amber-400/20",
+  4: "bg-yellow-400/20",
+  5: "bg-blue-400/20",
+  6: "bg-sky-400/20",
+  7: "bg-emerald-400/20",
+  8: "bg-green-400/20",
+  9: "bg-teal-400/20",
+  10: "bg-purple-400/20",
 };
 
 export default function MoodTracker() {
-  const [moodValue, setMoodValue] = useState([5.00]);
-  const [currentTier, setCurrentTier] = useState(2);
-  const [currentImageId, setCurrentImageId] = useState(1);
-  const [extIndex, setExtIndex] = useState(0);
-
-  const SUPPORTED_EXTS = [".jpg", ".jpeg", ".png", ".svg", ".webp", ".gif"];
+  const [moodValue, setMoodValue] = useState([5]);
 
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categoryImpacts, setCategoryImpacts] = useState({});
@@ -48,9 +77,9 @@ export default function MoodTracker() {
   const [isSecureMode, setIsSecureMode] = useState(false);
   const [pinMode, setPinMode] = useState("manual"); // 'auto' | 'manual'
   const [savedAutoPin, setSavedAutoPin] = useState("");
-  
+
   const [unlockedEntries, setUnlockedEntries] = useState([]);
-  
+
   const [isKeypadOpen, setIsKeypadOpen] = useState(false);
   const [keypadContext, setKeypadContext] = useState(null);
   const [keypadPin, setKeypadPin] = useState("");
@@ -109,24 +138,6 @@ export default function MoodTracker() {
       .catch((err) => console.error("Failed to load mood entries:", err));
   }, []);
 
-  // Image recalculation logic
-  useEffect(() => {
-    const val = moodValue[0];
-    let newTier = 2;
-    if (val <= 2.50) newTier = 1;
-    else if (val <= 5.00) newTier = 2;
-    else if (val <= 7.50) newTier = 3;
-    else newTier = 4;
-
-    if (newTier !== currentTier) {
-      setCurrentTier(newTier);
-      const maxImages = TIER_IMAGE_COUNTS[`tier${newTier}`];
-      const randomId = Math.floor(Math.random() * maxImages) + 1;
-      setCurrentImageId(randomId);
-      setExtIndex(0); // Reset extension guesser when changing image
-    }
-  }, [moodValue, currentTier]);
-
   const handleSave = async (overridePin = null) => {
     if (isSaving) return;
 
@@ -142,21 +153,20 @@ export default function MoodTracker() {
     const now = new Date();
 
     // Format to tags array for backward compatibility
-    // e.g. ["School: Negative", "Family: Positive"]
     const tagsArray = selectedCategories.map(cat => `${cat}: ${categoryImpacts[cat] || "Neutral"}`);
 
-    // Generate a fallback emoji based on tier for past entries UI
-    const fallbackEmoji = currentTier === 1 ? "😞" : currentTier === 2 ? "🙁" : currentTier === 3 ? "🙂" : "😄";
+    // Generate emoji based on 1-10 scale
+    const currentMoodEmoji = MOOD_EMOJIS[moodValue[0]];
 
     const newEntry = {
       date: now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
       time: now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
       timestamp: now.toISOString(),
-      emoji: fallbackEmoji,
-      level: Math.round(moodValue[0] / 2), // map 0-10 back to 1-5 scale for backwards compatibility if needed
+      emoji: currentMoodEmoji,
+      level: Math.round(moodValue[0] / 2), // map 1-10 back to 1-5 scale for backwards compatibility
       tags: tagsArray,
       note: isSecureMode ? null : note,
-      detailedScore: moodValue[0], // Optional new field
+      detailedScore: moodValue[0],
       suggestion: dynamicInsight,
       isLocked: isSecureMode,
       secureNote: isSecureMode ? secureNote : null,
@@ -174,7 +184,7 @@ export default function MoodTracker() {
         setPastEntries([savedEntry, ...pastEntries]);
 
         // Reset state
-        setMoodValue([5.00]);
+        setMoodValue([5]);
         setSelectedCategories([]);
         setCategoryImpacts({});
         setNote("");
@@ -248,58 +258,75 @@ export default function MoodTracker() {
         <CardContent className="space-y-8">
 
           <div className="space-y-6">
-            <div className="flex flex-col items-center justify-center p-6 bg-secondary/30 rounded-3xl border border-border/50 transition-all duration-500">
-              {/* Dynamic Image Container */}
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-background shadow-lg mb-4 bg-muted relative">
-                <img
-                  key={`${currentTier}-${currentImageId}`} // forces refresh animation only on real image change
-                  src={`/image/moodTier${currentTier}/${currentImageId}${SUPPORTED_EXTS[extIndex]}`}
-                  alt="Mood representation"
-                  className="w-full h-full object-cover animate-in fade-in zoom-in duration-500"
-                  onError={(e) => {
-                    if (extIndex < SUPPORTED_EXTS.length - 1) {
-                      setExtIndex(prev => prev + 1);
-                    } else {
-                      e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23e2e8f0'/%3E%3Ctext x='50' y='50' font-family='sans-serif' font-size='12' text-anchor='middle' alignment-baseline='middle' fill='%2394a3b8'%3ENo Image%3C/text%3E%3C/svg%3E";
-                    }
-                  }}
-                />
+            <div className="flex flex-col items-center justify-center py-10 bg-transparent transition-all duration-700 relative overflow-hidden">
+              {/* Soft Ambient Glow Background */}
+              <div
+                className={cn(
+                  "absolute inset-0 w-full h-full blur-[80px] opacity-40 transition-colors duration-700 rounded-full scale-110",
+                  MOOD_COLORS[moodValue[0]]
+                )}
+              />
+
+              {/* Animated Emoji Display (表情包) */}
+              <div className="relative z-10 w-40 h-40 md:w-48 md:h-48 flex items-center justify-center mb-4 text-8xl md:text-9xl animate-breathing drop-shadow-2xl">
+                {MOOD_EMOJIS[moodValue[0]]}
               </div>
-              <p className="font-heading font-medium text-3xl text-primary font-mono tracking-tight">
-                {moodValue[0].toFixed(2)}
-              </p>
+
+              <div className="relative z-10 text-center space-y-1">
+                <p className="font-heading font-bold text-5xl text-foreground tracking-tighter">
+                  {moodValue[0]}
+                </p>
+                <p className={cn(
+                  "text-xl font-semibold tracking-wide transition-all duration-500",
+                  moodValue[0] <= 2 ? "text-rose-500" :
+                    moodValue[0] <= 4 ? "text-orange-500" :
+                      moodValue[0] <= 5 ? "text-blue-500" :
+                        moodValue[0] <= 7 ? "text-emerald-500" : "text-purple-500"
+                )}>
+                  {MOOD_LABELS[moodValue[0]]}
+                </p>
+              </div>
             </div>
 
-            <div className="px-2">
+            <div className="px-6 max-w-xl mx-auto w-full">
               <Slider
                 value={moodValue}
                 onValueChange={(val) => setMoodValue(val)}
                 max={10}
                 min={0}
-                step={0.01}
+                step={1}
                 className="my-6"
               />
-              <div className="flex justify-between text-xs text-muted-foreground px-1">
-                <span>0 • Lowest</span>
-                <span>5 • Neutral</span>
-                <span>10 • Best</span>
+              <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground/60 px-1">
+                <span>Low</span>
+                <span>Neutral</span>
+                <span>Best</span>
               </div>
             </div>
           </div>
 
-          <div className="w-full h-px bg-border my-6"></div>
+          <div className="w-full h-px bg-border/40 my-10"></div>
 
           {/* STEP 1: Categories Selection */}
-          <div className="space-y-3">
-            <label className="text-sm font-semibold text-foreground">
-              What&apos;s contributing to this?
-            </label>
-            <div className="flex flex-wrap gap-2">
+          <div className="space-y-8 pt-2">
+            <div className="text-center space-y-2">
+              <label className="text-sm font-bold uppercase tracking-[0.15em] text-muted-foreground/60">
+                What&apos;s contributing to this?
+              </label>
+              <p className="text-sm text-muted-foreground">Select the areas influencing your mood today</p>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-4 md:gap-6 max-w-2xl mx-auto px-4">
               {CATEGORIES.map((cat) => (
                 <Badge
                   key={cat}
                   variant={selectedCategories.includes(cat) ? "default" : "outline"}
-                  className={`cursor-pointer px-4 py-2 transition-all text-sm rounded-full ${selectedCategories.includes(cat) ? 'shadow-md scale-105' : 'hover:bg-primary/20 hover:text-primary bg-transparent text-muted-foreground border-border'}`}
+                  className={cn(
+                    "cursor-pointer px-6 py-4 transition-all duration-400 text-base rounded-2xl border-none ring-1 ring-border/50",
+                    selectedCategories.includes(cat)
+                      ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-105"
+                      : "bg-card hover:bg-secondary hover:ring-primary/30 text-foreground shadow-sm"
+                  )}
                   onClick={() => toggleCategory(cat)}
                 >
                   {cat}
@@ -374,7 +401,7 @@ export default function MoodTracker() {
                       value={secureNote}
                       onChange={(e) => setSecureNote(e.target.value)}
                     />
-                    
+
                     <div className="space-y-3 pt-2 border-t border-primary/10">
                       <div className="flex items-center justify-between">
                         <label htmlFor="auto-pin" className="text-sm cursor-pointer font-medium text-foreground">Auto-apply 6-digit PIN</label>
@@ -388,12 +415,12 @@ export default function MoodTracker() {
                       {pinMode === "auto" ? (
                         <div className="animate-in slide-in-from-top-2 fade-in">
                           {savedAutoPin.length === 6 ? (
-                             <div className="flex items-center gap-3">
-                               <span className="text-sm border border-primary/30 px-3 py-1.5 rounded-full bg-primary/10 font-mono tracking-widest text-primary">••••••</span>
-                               <Button variant="outline" size="sm" onClick={() => openKeypad('auto')} className="rounded-full">Change PIN</Button>
-                             </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm border border-primary/30 px-3 py-1.5 rounded-full bg-primary/10 font-mono tracking-widest text-primary">••••••</span>
+                              <Button variant="outline" size="sm" onClick={() => openKeypad('auto')} className="rounded-full">Change PIN</Button>
+                            </div>
                           ) : (
-                             <Button onClick={() => openKeypad('auto')} className="rounded-full" variant="secondary">Set Auto PIN</Button>
+                            <Button onClick={() => openKeypad('auto')} className="rounded-full" variant="secondary">Set Auto PIN</Button>
                           )}
                           <p className="text-[11px] text-muted-foreground mt-2 leading-tight">
                             This PIN will be seamlessly applied to future secure entries once saved.
@@ -492,18 +519,18 @@ export default function MoodTracker() {
                       </div>
                     ) : (
                       <div className="mt-3 bg-secondary/30 border border-border/50 p-3 rounded-xl flex items-center justify-between gap-3">
-                         <div className="flex items-center gap-2">
-                           <span className="text-sm">🔒</span>
-                           <span className="text-sm font-semibold text-foreground">Locked Entry</span>
-                         </div>
-                         <Button
-                           size="sm"
-                           variant="secondary"
-                           className="font-medium rounded-full px-5"
-                           onClick={() => openKeypad(entry.id || entry.timestamp)}
-                         >
-                           Unlock
-                         </Button>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">🔒</span>
+                          <span className="text-sm font-semibold text-foreground">Locked Entry</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="font-medium rounded-full px-5"
+                          onClick={() => openKeypad(entry.id || entry.timestamp)}
+                        >
+                          Unlock
+                        </Button>
                       </div>
                     )
                   ) : (
@@ -531,8 +558,8 @@ export default function MoodTracker() {
 
           <div className="flex justify-center gap-4 mb-10">
             {[...Array(6)].map((_, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className={`w-4 h-4 rounded-full transition-all duration-300 ${i < keypadPin.length ? 'bg-primary scale-110' : 'bg-secondary border border-border'}`}
               />
             ))}
