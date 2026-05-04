@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Heart, Send, Ghost, RefreshCcw, Volume2, VolumeX } from "lucide-react";
+import { Sparkles, Heart, Send, Ghost, RefreshCcw, Volume2, VolumeX, Stars } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const WARM_QUOTES = [
@@ -25,7 +25,24 @@ export default function ZenSpace() {
   const [fireflies, setFireflies] = useState([]); // { id, x, y, size }
   const [isJarGlowing, setIsJarGlowing] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [isEntering, setIsEntering] = useState(true);
+  const [isDrawing, setIsDrawing] = useState(false);
   const audioRef = useRef(null);
+  const sfxRef = useRef(null);
+
+  // Entry celebration timer
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsEntering(false);
+      // Start music after entry animation ends
+      if (audioRef.current && isPlaying) {
+        audioRef.current.play().catch(() => {
+          console.log("Autoplay blocked. Will start on interaction.");
+        });
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [isPlaying]);
 
   const toggleMusic = () => {
     if (!audioRef.current) return;
@@ -40,18 +57,10 @@ export default function ZenSpace() {
     setIsPlaying(!isPlaying);
   };
 
-  // Attempt to auto-play or handle initial state
+  // Initial setup for volume
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = 0.4;
-      // Browsers often block auto-play without user interaction.
-      // We set isPlaying to true, and attempt play. 
-      // If it fails, the user will see the "playing" state but hear nothing until they click.
-      audioRef.current.play().catch(() => {
-        console.log("Autoplay blocked by browser. Music will start on first interaction.");
-        // We keep isPlaying as true so the UI reflects the intent, 
-        // and the toggle will work correctly on first click.
-      });
     }
   }, []);
 
@@ -73,12 +82,28 @@ export default function ZenSpace() {
     if (!worry.trim()) return;
 
     setIsTransforming(true);
+
+    // Play initial "sending" sound
+    if (sfxRef.current) {
+      sfxRef.current.currentTime = 0;
+      sfxRef.current.volume = 0.5;
+      sfxRef.current.play().catch(e => console.log("SFX play failed:", e));
+    }
+
     // After animation, add worry to jar and clear input
     setTimeout(() => {
       setIsTransforming(false);
       setWorries(prev => [...prev, worry]);
       setWorry("");
       setIsJarGlowing(true);
+
+      // Play "arrival" sound
+      if (sfxRef.current) {
+        sfxRef.current.currentTime = 0;
+        sfxRef.current.volume = 0.8;
+        sfxRef.current.play().catch(e => console.log("SFX play failed:", e));
+      }
+
       setTimeout(() => setIsJarGlowing(false), 2000);
 
       // Add a new "gratitude" firefly
@@ -97,6 +122,14 @@ export default function ZenSpace() {
 
   const clearJar = () => {
     setIsJarGlowing(true);
+
+    // Play discard sound
+    if (sfxRef.current) {
+      sfxRef.current.currentTime = 0;
+      sfxRef.current.volume = 0.6;
+      sfxRef.current.play().catch(e => console.log("SFX play failed:", e));
+    }
+
     // Visual feedback for clearing
     setTimeout(() => {
       setWorries([]);
@@ -106,37 +139,79 @@ export default function ZenSpace() {
 
   const drawFromJar = (e) => {
     if (e) e.stopPropagation();
+    if (isDrawing) return; // Prevent multiple clicks during animation
+
+    // Show drawing celebration
+    setIsDrawing(true);
+    setIsJarGlowing(true);
+
+    // Play celebration sound
+    if (sfxRef.current) {
+      sfxRef.current.currentTime = 0;
+      sfxRef.current.volume = 1.0; // Max volume for celebration
+      sfxRef.current.play().catch(e => console.log("SFX play failed:", e));
+    }
 
     // Clear any existing timer
     if (activeMessageTimer) {
       clearTimeout(activeMessageTimer);
     }
 
-    // Pick a random quote, ensure it's different from current if possible
+    // Pick a random quote
     let randomQuote;
     do {
       randomQuote = WARM_QUOTES[Math.floor(Math.random() * WARM_QUOTES.length)];
     } while (randomQuote === activeMessage && WARM_QUOTES.length > 1);
 
-    setActiveMessage(randomQuote);
-    setIsJarGlowing(true);
+    // Sequence the animation
+    setTimeout(() => {
+      setIsDrawing(false);
+      setActiveMessage(randomQuote);
+      setWorries([]); // Clear worries when drawing warmth
 
-    // Clear worries when drawing warmth
-    setWorries([]);
+      setTimeout(() => setIsJarGlowing(false), 1500);
 
-    setTimeout(() => setIsJarGlowing(false), 1500);
+      // Auto-clear message after exactly 3 seconds
+      const timer = setTimeout(() => {
+        setActiveMessage("");
+        setActiveMessageTimer(null);
+      }, 3000);
 
-    // Auto-clear message after exactly 3 seconds
-    const timer = setTimeout(() => {
-      setActiveMessage("");
-      setActiveMessageTimer(null);
-    }, 3000);
-
-    setActiveMessageTimer(timer);
+      setActiveMessageTimer(timer);
+    }, 1200); // Wait for the draw animation
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-140px)] md:min-h-[calc(100vh-180px)] w-full flex flex-col items-center justify-start md:justify-center overflow-y-auto rounded-[40px] transition-all duration-1000 bg-[#F9F8FF] dark:bg-[#0A0910] border border-purple-100/50 dark:border-purple-900/20 shadow-inner px-4 md:px-8">
+    <div className="relative w-full flex flex-col items-center justify-start md:justify-center rounded-[40px] transition-all duration-1000 bg-[#F9F8FF] dark:bg-[#0A0910] border border-purple-100/50 dark:border-purple-900/20 shadow-inner px-4 md:px-8 py-8 md:py-12">
+      {/* Entry Celebration Overlay */}
+      {isEntering && (
+        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-white/60 dark:bg-black/40 backdrop-blur-xl animate-in fade-in duration-700 rounded-[40px]">
+          <div className="relative scale-150">
+            <div className="absolute inset-0 bg-purple-500/20 blur-[60px] rounded-full animate-pulse" />
+            <Sparkles className="h-12 w-12 text-purple-500 animate-star-gather relative z-10" />
+            <Sparkles className="absolute -top-2 -right-2 h-4 w-4 text-purple-400 animate-bounce delay-100" />
+            <Sparkles className="absolute -bottom-2 -left-2 h-3 w-3 text-purple-300 animate-bounce delay-300" />
+          </div>
+          <p className="mt-12 text-purple-900/40 dark:text-purple-100/40 font-bold uppercase tracking-[0.4em] text-[10px] animate-in slide-in-from-bottom-4 duration-1000">
+            Entering Zen Space
+          </p>
+        </div>
+      )}
+
+      {/* Drawing Celebration Overlay */}
+      {isDrawing && (
+        <div className="absolute inset-0 z-[90] flex items-center justify-center pointer-events-none">
+          <div className="relative">
+            <div className="absolute inset-0 bg-purple-400/30 blur-[80px] rounded-full animate-ping duration-1000" />
+            <div className="flex gap-2">
+              <Sparkles className="h-8 w-8 text-purple-500 animate-star-gather" />
+              <Sparkles className="h-8 w-8 text-purple-400 animate-star-gather delay-150" />
+              <Sparkles className="h-8 w-8 text-purple-300 animate-star-gather delay-300" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Background - Soft Apple Purple Ambient Light */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Main Ambient Glow - Purple/Violet Tones */}
@@ -165,12 +240,15 @@ export default function ZenSpace() {
         ))}
       </div>
 
+      {/* Audio Elements */}
+      <audio ref={audioRef} src="/audio/lofi.mp3" loop preload="auto" />
+      <audio ref={sfxRef} src="/audio/reminder.mp3" preload="auto" />
+
       {/* Music Control - Fixed Position */}
       <div className="absolute top-6 right-6 md:right-8 z-30 flex items-center gap-3">
         <span className="text-[10px] font-bold text-purple-400 dark:text-purple-500 uppercase tracking-widest hidden md:block">
           {isPlaying ? "Now Playing" : "Healing Music"}
         </span>
-        <audio ref={audioRef} src="/audio/lofi.mp3" loop />
         <Button
           variant="outline"
           size="icon"
