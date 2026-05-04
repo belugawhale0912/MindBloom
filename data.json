@@ -72,7 +72,7 @@
   "mixes": [],
   "settings": {
     "name": "User",
-    "darkMode": true,
+    "darkMode": false,
     "notifications": true,
     "language": "English (US)"
   },

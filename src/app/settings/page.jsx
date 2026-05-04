@@ -29,29 +29,36 @@ export default function Settings() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    
-    // From here used to add the dark mode setting to local storage
+    // 1. First sync with LocalStorage to avoid flicker
     if (typeof window !== "undefined") {
-      const isDark = localStorage.getItem("theme") === "dark" ||
-        (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      const isDark = localStorage.getItem("theme") === "dark";
       setDarkMode(isDark);
     }
 
+    // 2. Fetch data from API
     fetch("/api/settings")
       .then(res => res.json())
       .then(data => {
         setName(data.name || "Alex");
+        setNotifications(data.notifications !== undefined ? data.notifications : true);
+        
+        // Only update dark mode if the API specifically says so AND it differs from local storage
+        // to avoid "resetting" to a default value during initial load
         if (data.darkMode !== undefined) {
-          setDarkMode(data.darkMode);
-          if (data.darkMode) {
-            document.documentElement.classList.add("dark");
-            localStorage.setItem("theme", "dark");
-          } else {
-            document.documentElement.classList.remove("dark");
-            localStorage.setItem("theme", "light");
+          const currentTheme = localStorage.getItem("theme");
+          const apiTheme = data.darkMode ? "dark" : "light";
+          
+          if (currentTheme !== apiTheme) {
+            setDarkMode(data.darkMode);
+            if (data.darkMode) {
+              document.documentElement.classList.add("dark");
+              localStorage.setItem("theme", "dark");
+            } else {
+              document.documentElement.classList.remove("dark");
+              localStorage.setItem("theme", "light");
+            }
           }
         }
-        setNotifications(data.notifications !== undefined ? data.notifications : true);
       })
       .catch(err => console.error(err));
   }, []);
