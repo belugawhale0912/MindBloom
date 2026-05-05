@@ -1,40 +1,69 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
+import { supabase, DEMO_USER_ID } from '@/lib/supabase';
 
-const dataFilePath = path.join(process.cwd(), 'data.json');
-
-async function getDb() {
+export async function GET() {
   try {
-    const fileContent = await fs.readFile(dataFilePath, 'utf8');
-    const db = JSON.parse(fileContent);
-    if (!db.settings) {
-      db.settings = {
-        name: "Alex",
-        darkMode: false,
+    // Try to get settings for Emily
+    const { data, error } = await supabase
+      .from('settings')
+      .select('*')
+      .eq('user_id', DEMO_USER_ID)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows found"
+
+    // Default settings if none found
+    if (!data) {
+      return NextResponse.json({
+        name: "User",
+        dark_mode: false,
         notifications: true,
         language: "English (US)"
-      };
-      await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
+      });
     }
-    return db;
+
+    // Map database fields back to frontend names if needed
+    return NextResponse.json({
+      name: data.name,
+      darkMode: data.dark_mode,
+      notifications: data.notifications,
+      language: data.language
+    });
   } catch (error) {
-    if (error.code === 'ENOENT') {
-      return { settings: { name: "Alex", darkMode: false } };
-    }
-    throw error;
+    console.error('Supabase GET Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function GET() {
-  const db = await getDb();
-  return NextResponse.json(db.settings);
-}
-
 export async function POST(request) {
-  const newSettings = await request.json();
-  const db = await getDb();
-  db.settings = { ...db.settings, ...newSettings };
-  await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-  return NextResponse.json(db.settings);
+  try {
+    const newSettings = await request.json();
+
+    // Map frontend fields to database names
+    const settingsToUpsert = {
+      name: newSettings.name,
+      dark_mode: newSettings.darkMode,
+      notifications: newSettings.notifications,
+      language: newSettings.language,
+      user_id: DEMO_USER_ID
+    };
+
+    const { data, error } = await supabase
+      .from('settings')
+      .upsert([settingsToUpsert], { onConflict: 'user_id' })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({
+      name: data.name,
+      darkMode: data.dark_mode,
+      notifications: data.notifications,
+      language: data.language
+    });
+  } catch (error) {
+    console.error('Supabase POST Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

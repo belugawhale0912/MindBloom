@@ -1,53 +1,76 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
-
-const dataFilePath = path.join(process.cwd(), 'data.json');
+import { supabase, DEMO_USER_ID } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
-async function getDb() {
-  try {
-    const fileContent = await fs.readFile(dataFilePath, 'utf8');
-    const db = JSON.parse(fileContent);
-    if (!db.reminders) {
-      db.reminders = [
-        { id: 1, title: "Morning Check-in", time: "08:00", active: true, icon: "Sunrise", color: "text-orange-500", freq: "Daily" },
-        { id: 2, title: "Midday Mood Log", time: "12:30", active: false, icon: "SunMedium", color: "text-amber-500", freq: "Weekdays" },
-        { id: 3, title: "Evening Reflection", time: "20:00", active: true, icon: "Moon", color: "text-indigo-500", freq: "Daily" },
-        { id: 4, title: "Take a Break", time: "15:00", active: false, icon: "Coffee", color: "text-brown-500", freq: "Custom" }
-      ];
-      await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-    }
-    return db;
-  } catch (error) {
-    throw error;
-  }
-}
-
 export async function GET() {
-  const db = await getDb();
-  return NextResponse.json(db.reminders);
+  try {
+    const { data, error } = await supabase
+      .from('reminders')
+      .select('*')
+      .eq('user_id', DEMO_USER_ID)
+      .order('id', { ascending: true });
+
+    if (error) throw error;
+
+    // If no reminders, return defaults (matching original logic)
+    if (!data || data.length === 0) {
+      const defaultReminders = [
+        { title: "Morning Check-in", time: "08:00", active: true, icon: "Sunrise", color: "text-orange-500", freq: "Daily" },
+        { title: "Midday Mood Log", time: "12:30", active: false, icon: "SunMedium", color: "text-amber-500", freq: "Weekdays" },
+        { title: "Evening Reflection", time: "20:00", active: true, icon: "Moon", color: "text-indigo-500", freq: "Daily" },
+        { title: "Take a Break", time: "15:00", active: false, icon: "Coffee", color: "text-brown-500", freq: "Custom" }
+      ];
+      return NextResponse.json(defaultReminders);
+    }
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Supabase GET Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function POST(request) {
   try {
     const updatedReminders = await request.json();
-    
-    // Basic validation
+
     if (!Array.isArray(updatedReminders)) {
       return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
     }
 
-    console.log(`[API] Received POST request. New reminders count: ${updatedReminders.length}`);
-    const db = await getDb();
-    db.reminders = updatedReminders;
-    await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-    console.log(`[API] Sync successful. Data written to ${dataFilePath}`);
+    // Prepare for bulk sync: delete all and re-insert
+    // (This matches the current "replace entire array" logic of the data.json implementation)
+    // Note: In a production app with multi-user support, you'd filter by user_id.
+
+    // 1. Delete existing
+    const { error: deleteError } = await supabase
+      .from('reminders')
+      .delete()
+      .eq('user_id', DEMO_USER_ID);
+
+    if (deleteError) throw deleteError;
+
+    // 2. Insert new
+    const remindersToInsert = updatedReminders.map(r => ({
+      title: r.title,
+      time: r.time,
+      active: r.active,
+      icon: r.icon,
+      color: r.color,
+      freq: r.freq,
+      user_id: DEMO_USER_ID
+    }));
+
+    const { error: insertError } = await supabase
+      .from('reminders')
+      .insert(remindersToInsert);
+
+    if (insertError) throw insertError;
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("[API] POST Error:", error);
+    console.error('Supabase POST Error:', error);
     return NextResponse.json({ error: "Failed to save data" }, { status: 500 });
   }
 }
-

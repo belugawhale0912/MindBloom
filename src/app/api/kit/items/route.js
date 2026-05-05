@@ -1,49 +1,90 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
+import { supabase, DEMO_USER_ID } from '@/lib/supabase';
 
-const dataFilePath = path.join(process.cwd(), 'data.json');
-
-async function getDb() {
+export async function GET() {
   try {
-    const fileContent = await fs.readFile(dataFilePath, 'utf8');
-    const db = JSON.parse(fileContent);
-    if (!db.calmKitItems) {
-      db.calmKitItems = [
-        { id: 1, type: "technique", title: "Box Breathing", description: "Focus & nervous system regulation", icon: "Wind" },
-        { id: 2, type: "technique", title: "5-4-3-2-1 Grounding", description: "Anxiety reduction & panic relief", icon: "Wind" },
-        { id: 3, type: "video", title: "Gentle Yoga for Tension Relief", description: "Yoga with Adriene", duration: "10:45" },
-        { id: 4, type: "video", title: "Guided Sleep Meditation", description: "Great Meditation", duration: "15:20" }
+    const { data, error } = await supabase
+      .from('kit_media')
+      .select('*')
+      .eq('user_id', DEMO_USER_ID)
+      .order('id', { ascending: true });
+
+    if (error) throw error;
+
+    // Map database fields to frontend format
+    const mappedData = (data || []).map(item => ({
+      id: item.id,
+      url: item.media_path,
+      type: item.media_type,
+      title: item.title || (item.media_path ? item.media_path.split('/').pop() : 'Untitled'), // Fallback to filename if title column doesn't exist yet
+      description: item.description || ''
+    }));
+
+    // Default data if empty (including the hardcoded techniques)
+    if (mappedData.length === 0) {
+      const defaultItems = [
+        { type: "technique", title: "Box Breathing", description: "Focus & nervous system regulation", icon: "Wind" },
+        { type: "technique", title: "5-4-3-2-1 Grounding", description: "Anxiety reduction & panic relief", icon: "Wind" }
       ];
-      await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
+      return NextResponse.json(defaultItems);
     }
-    return db;
+
+    return NextResponse.json(mappedData);
   } catch (error) {
-    if (error.code === 'ENOENT') {
-      return { calmKitItems: [] };
-    }
-    throw error;
+    console.error('Supabase GET Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function GET() {
-  const db = await getDb();
-  return NextResponse.json(db.calmKitItems);
-}
-
 export async function POST(request) {
-  const newItem = await request.json();
-  const db = await getDb();
-  if (!newItem.id) newItem.id = Date.now();
-  db.calmKitItems.push(newItem);
-  await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-  return NextResponse.json(newItem);
+  try {
+    const newItem = await request.json();
+
+    // Mapping frontend fields to the new kit_media table columns
+    const entryToInsert = {
+      media_path: newItem.url,
+      media_type: newItem.type,
+      user_id: DEMO_USER_ID,
+      // We still pass title/description in case you add these columns to the table later
+      title: newItem.title,
+      description: newItem.description
+    };
+
+    const { data, error } = await supabase
+      .from('kit_media')
+      .insert([entryToInsert])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Return mapped data for frontend
+    return NextResponse.json({
+      id: data.id,
+      url: data.media_path,
+      type: data.media_type,
+      title: data.title || newItem.title,
+      description: data.description || newItem.description
+    }, { status: 201 });
+  } catch (error) {
+    console.error('Supabase POST Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function DELETE(request) {
-  const { id } = await request.json();
-  const db = await getDb();
-  db.calmKitItems = db.calmKitItems.filter(item => item.id !== id);
-  await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-  return NextResponse.json({ success: true });
+  try {
+    const { id } = await request.json();
+
+    const { error } = await supabase
+      .from('kit_media')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Supabase DELETE Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

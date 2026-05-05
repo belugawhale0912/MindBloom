@@ -1,41 +1,45 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
-
-const dataFilePath = path.join(process.cwd(), 'data.json');
-
-async function getDb() {
-  try {
-    const fileContent = await fs.readFile(dataFilePath, 'utf8');
-    const db = JSON.parse(fileContent);
-    if (!db.journalEntries) {
-      db.journalEntries = [];
-      await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-    }
-    return db;
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return { journalEntries: [] };
-    }
-    throw error;
-  }
-}
+import { supabase, DEMO_USER_ID } from '@/lib/supabase';
 
 export async function GET() {
-  const db = await getDb();
-  return NextResponse.json(db.journalEntries);
+  try {
+    const { data, error } = await supabase
+      .from('journal_entries')
+      .select('*')
+      .eq('user_id', DEMO_USER_ID)
+      .order('date', { ascending: false });
+
+    if (error) throw error;
+    return NextResponse.json(data || []);
+  } catch (error) {
+    console.error('Supabase GET Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function POST(request) {
-  const newEntry = await request.json();
-  const db = await getDb();
-  
-  if (!newEntry.id) {
-    newEntry.id = Date.now();
+  try {
+    const newEntry = await request.json();
+
+    const entryToInsert = {
+      title: newEntry.title,
+      content: newEntry.content,
+      date: newEntry.date || new Date().toISOString(),
+      mood: newEntry.mood,
+      tags: newEntry.tags || [],
+      user_id: DEMO_USER_ID
+    };
+
+    const { data, error } = await supabase
+      .from('journal_entries')
+      .insert([entryToInsert])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json(data, { status: 201 });
+  } catch (error) {
+    console.error('Supabase POST Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
-  db.journalEntries.unshift(newEntry);
-  await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-  
-  return NextResponse.json(newEntry, { status: 201 });
 }

@@ -1,55 +1,71 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
+import { supabase, DEMO_USER_ID } from '@/lib/supabase';
 
-const dataFilePath = path.join(process.cwd(), 'data.json');
-
-async function getDb() {
+export async function GET() {
   try {
-    const fileContent = await fs.readFile(dataFilePath, 'utf8');
-    const db = JSON.parse(fileContent);
-    if (!db.kitNotes) {
-      db.kitNotes = [
+    const { data, error } = await supabase
+      .from('kit_notes')
+      .select('*')
+      .eq('user_id', DEMO_USER_ID)
+      .order('id', { ascending: false });
+
+    if (error) throw error;
+
+    // Default data if empty
+    if (!data || data.length === 0) {
+      return NextResponse.json([
         {
           id: 1,
           content: "Remember that productivity doesn't define your worth. It's okay to have rest days. You are doing enough just by being here.",
           date: "Added 2 days ago"
         }
-      ];
-      await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
+      ]);
     }
-    return db;
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return { kitNotes: [] };
-    }
-    throw error;
-  }
-}
 
-export async function GET() {
-  const db = await getDb();
-  return NextResponse.json(db.kitNotes);
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Supabase GET Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function POST(request) {
-  const newNote = await request.json();
-  const db = await getDb();
-  
-  if (!newNote.id) {
-    newNote.id = Date.now();
+  try {
+    const newNote = await request.json();
+
+    const entryToInsert = {
+      content: newNote.content,
+      date: newNote.date || "Just now",
+      user_id: DEMO_USER_ID
+    };
+
+    const { data, error } = await supabase
+      .from('kit_notes')
+      .insert([entryToInsert])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json(data, { status: 201 });
+  } catch (error) {
+    console.error('Supabase POST Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
-  db.kitNotes.unshift(newNote);
-  await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-  
-  return NextResponse.json(newNote, { status: 201 });
 }
 
 export async function DELETE(request) {
-  const { id } = await request.json();
-  const db = await getDb();
-  db.kitNotes = db.kitNotes.filter(note => note.id !== id);
-  await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-  return NextResponse.json({ success: true });
+  try {
+    const { id } = await request.json();
+
+    const { error } = await supabase
+      .from('kit_notes')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Supabase DELETE Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

@@ -1,41 +1,47 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
-
-const dataFilePath = path.join(process.cwd(), 'data.json');
-
-async function getDb() {
-  try {
-    const fileContent = await fs.readFile(dataFilePath, 'utf8');
-    const db = JSON.parse(fileContent);
-    if (!db.assessments) {
-      db.assessments = [];
-      await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-    }
-    return db;
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return { assessments: [] };
-    }
-    throw error;
-  }
-}
+import { supabase, DEMO_USER_ID } from '@/lib/supabase';
 
 export async function GET() {
-  const db = await getDb();
-  return NextResponse.json(db.assessments);
+  try {
+    const { data, error } = await supabase
+      .from('assessments')
+      .select('*')
+      .eq('user_id', DEMO_USER_ID)
+      .order('date', { ascending: false });
+
+    if (error) throw error;
+    return NextResponse.json(data || []);
+  } catch (error) {
+    console.error('Supabase GET Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function POST(request) {
-  const newAssessment = await request.json();
-  const db = await getDb();
-  
-  if (!newAssessment.id) {
-    newAssessment.id = Date.now();
+  try {
+    const newAssessment = await request.json();
+
+    const entryToInsert = {
+      type: newAssessment.type,
+      date: newAssessment.date || new Date().toISOString(),
+      score: newAssessment.score,
+      total_score: newAssessment.totalScore, // totalScore -> total_score
+      question_count: newAssessment.questionCount, // questionCount -> question_count
+      severity: newAssessment.severity,
+      answers: newAssessment.answers || [],
+      user_id: DEMO_USER_ID
+    };
+
+    const { data, error } = await supabase
+      .from('assessments')
+      .insert([entryToInsert])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json(data, { status: 201 });
+  } catch (error) {
+    console.error('Supabase POST Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
-  db.assessments.unshift(newAssessment);
-  await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-  
-  return NextResponse.json(newAssessment, { status: 201 });
 }

@@ -15,8 +15,14 @@ export async function POST(request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', type === 'video' ? 'videos' : 'photos');
+    // Create a safe filename
+    const timestamp = Date.now();
+    const safeName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+    const filename = `${timestamp}-${safeName}`;
+    
+    // Determine subdirectory based on type
+    const subDir = type === 'video' ? 'videos' : 'photos';
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', subDir);
     
     // Ensure directory exists
     await fs.mkdir(uploadDir, { recursive: true });
@@ -24,7 +30,8 @@ export async function POST(request) {
     const filePath = path.join(uploadDir, filename);
     await fs.writeFile(filePath, buffer);
 
-    const relativePath = `/uploads/${type === 'video' ? 'videos' : 'photos'}/${filename}`;
+    // Return the relative path for the frontend to use
+    const relativePath = `/uploads/${subDir}/${filename}`;
 
     return NextResponse.json({ url: relativePath, filename: file.name });
   } catch (error) {

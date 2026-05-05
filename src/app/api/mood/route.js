@@ -1,37 +1,54 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
-
-const dataFilePath = path.join(process.cwd(), 'data.json');
-
-async function getDb() {
-  try {
-    const fileContent = await fs.readFile(dataFilePath, 'utf8');
-    return JSON.parse(fileContent);
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return { moodEntries: [], companionMessages: [] };
-    }
-    throw error;
-  }
-}
+import { supabase, DEMO_USER_ID } from '@/lib/supabase';
 
 export async function GET() {
-  const db = await getDb();
-  return NextResponse.json(db.moodEntries);
+  try {
+    const { data, error } = await supabase
+      .from('mood_entries')
+      .select('*')
+      .eq('user_id', DEMO_USER_ID)
+      .order('timestamp', { ascending: false });
+
+    if (error) throw error;
+    return NextResponse.json(data || []);
+  } catch (error) {
+    console.error('Supabase GET Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function POST(request) {
-  const newEntry = await request.json();
-  const db = await getDb();
-  
-  // Assign a basic ID if missing
-  if (!newEntry.id) {
-    newEntry.id = Date.now();
+  try {
+    const newEntry = await request.json();
+
+    // Transform frontend data to database schema if needed
+    // In our SQL schema, tags is TEXT[], but frontend might send "Category: Impact"
+    const entryToInsert = {
+      date: newEntry.date,
+      time: newEntry.time,
+      timestamp: newEntry.timestamp || new Date().toISOString(),
+      emoji: newEntry.emoji,
+      level: newEntry.level,
+      tags: newEntry.tags || [],
+      note: newEntry.note,
+      detailed_score: newEntry.detailedScore, // detailedScore -> detailed_score
+      suggestion: newEntry.suggestion,
+      is_locked: newEntry.isLocked, // isLocked -> is_locked
+      secure_note: newEntry.secureNote, // secureNote -> secure_note
+      pin: newEntry.pin,
+      user_id: DEMO_USER_ID
+    };
+
+    const { data, error } = await supabase
+      .from('mood_entries')
+      .insert([entryToInsert])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json(data, { status: 201 });
+  } catch (error) {
+    console.error('Supabase POST Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
-  db.moodEntries.unshift(newEntry);
-  await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-  
-  return NextResponse.json(newEntry, { status: 201 });
 }

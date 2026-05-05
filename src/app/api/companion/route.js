@@ -1,43 +1,43 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
-
-const dataFilePath = path.join(process.cwd(), 'data.json');
-
-async function getDb() {
-  try {
-    const fileContent = await fs.readFile(dataFilePath, 'utf8');
-    return JSON.parse(fileContent);
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return { moodEntries: [], companionMessages: [] };
-    }
-    throw error;
-  }
-}
+import { supabase, DEMO_USER_ID } from '@/lib/supabase';
 
 export async function GET() {
-  const db = await getDb();
-  if (!db.companionMessages) {
-    db.companionMessages = [];
+  try {
+    const { data, error } = await supabase
+      .from('companion_messages')
+      .select('*')
+      .eq('user_id', DEMO_USER_ID)
+      .order('timestamp', { ascending: true });
+
+    if (error) throw error;
+    return NextResponse.json(data || []);
+  } catch (error) {
+    console.error('Supabase GET Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json(db.companionMessages);
 }
 
 export async function POST(request) {
-  const newMessage = await request.json();
-  const db = await getDb();
+  try {
+    const newMessage = await request.json();
 
-  if (!db.companionMessages) {
-    db.companionMessages = [];
+    const entryToInsert = {
+      role: newMessage.role,
+      content: newMessage.content,
+      timestamp: newMessage.timestamp || new Date().toISOString(),
+      user_id: DEMO_USER_ID
+    };
+
+    const { data, error } = await supabase
+      .from('companion_messages')
+      .insert([entryToInsert])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json(data, { status: 201 });
+  } catch (error) {
+    console.error('Supabase POST Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  if (!newMessage.id) {
-    newMessage.id = Date.now();
-  }
-
-  db.companionMessages.push(newMessage);
-  await fs.writeFile(dataFilePath, JSON.stringify(db, null, 2));
-  
-  return NextResponse.json(newMessage, { status: 201 });
 }
