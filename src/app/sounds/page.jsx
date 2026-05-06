@@ -111,7 +111,7 @@ export default function WhiteNoiseMixer() {
   const [timerLeft, setTimerLeft] = useState(0); // seconds
   const [loadedMixId, setLoadedMixId] = useState(null);
   const audioRefs = useRef({}); 
-  const hasSelectedSounds = Object.values(activeSounds).some(Boolean);
+  const hasSelectedSounds = Object.values(activeSounds || {}).some(Boolean);
 
   useEffect(() => {
     fetch("/api/mixes")
@@ -238,9 +238,10 @@ export default function WhiteNoiseMixer() {
   };
 
   const loadMix = (mix) => {
-    setActiveSounds(mix.activeSounds);
-    setVolumes(mix.volumes);
-    setMasterVolume(mix.masterVolume);
+    const restoredActiveSounds = mix.activeSounds || (mix.volumes ? Object.keys(mix.volumes).reduce((acc, key) => ({...acc, [key]: true}), {}) : {});
+    setActiveSounds(restoredActiveSounds);
+    setVolumes(mix.volumes || {});
+    setMasterVolume(mix.masterVolume || [80]);
     setLoadedMixId(mix.id);
   };
 
