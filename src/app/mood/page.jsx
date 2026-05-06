@@ -86,6 +86,33 @@ export default function MoodTracker() {
   const [pinMode, setPinMode] = useState("manual"); // 'auto' | 'manual'
   const [savedAutoPin, setSavedAutoPin] = useState("");
 
+  // Load preferences from localStorage on mount
+  useEffect(() => {
+    try {
+      const storedSecureMode = localStorage.getItem('mood_isSecureMode');
+      if (storedSecureMode !== null) setIsSecureMode(storedSecureMode === 'true');
+      
+      const storedPinMode = localStorage.getItem('mood_pinMode');
+      if (storedPinMode) setPinMode(storedPinMode);
+
+      const storedAutoPin = localStorage.getItem('mood_savedAutoPin');
+      if (storedAutoPin) setSavedAutoPin(storedAutoPin);
+    } catch (err) {
+      console.error("Failed to load preferences from localStorage", err);
+    }
+  }, []);
+
+  // Save preferences to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('mood_isSecureMode', isSecureMode);
+      localStorage.setItem('mood_pinMode', pinMode);
+      localStorage.setItem('mood_savedAutoPin', savedAutoPin);
+    } catch (err) {
+      console.error("Failed to save preferences to localStorage", err);
+    }
+  }, [isSecureMode, pinMode, savedAutoPin]);
+
   const [unlockedEntries, setUnlockedEntries] = useState([]);
 
   const [isKeypadOpen, setIsKeypadOpen] = useState(false);
@@ -129,6 +156,22 @@ export default function MoodTracker() {
       setKeypadPin(keypadPin.slice(0, -1));
     }
   };
+
+  useEffect(() => {
+    if (!isKeypadOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key >= '0' && e.key <= '9') {
+        handleKeypadPress(e.key);
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        handleKeypadDelete();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isKeypadOpen, keypadPin]);
 
   const openKeypad = (context) => {
     setKeypadContext(context);
@@ -225,8 +268,7 @@ export default function MoodTracker() {
         setCategoryImpacts({});
         setNote("");
         setSecureNote("");
-        setIsSecureMode(false);
-        setPinMode("manual");
+        // Intentionally not resetting isSecureMode and pinMode to remember the user's choice
       }
     } catch (err) {
       console.error("Failed to save mood:", err);
@@ -555,14 +597,14 @@ export default function MoodTracker() {
                   {entry.suggestion && (
                     <p className="text-sm text-primary font-medium mt-3 bg-primary/10 p-2.5 rounded-lg border border-primary/20">{entry.suggestion}</p>
                   )}
-                  {entry.isLocked ? (
+                  {entry.is_locked || entry.isLocked ? (
                     unlockedEntries.includes(entry.id || entry.timestamp) ? (
                       <div className="mt-3 bg-primary/5 border border-primary/20 p-3 rounded-xl animate-in fade-in zoom-in-95">
                         <div className="flex items-center gap-2 mb-1.5">
                           <span className="text-sm">🔓</span>
                           <span className="text-xs font-semibold text-primary uppercase tracking-wider">Secure Note Unlocked</span>
                         </div>
-                        <p className="text-sm text-foreground leading-relaxed pl-1 whitespace-pre-wrap">{entry.secureNote}</p>
+                        <p className="text-sm text-foreground leading-relaxed pl-1 whitespace-pre-wrap">{entry.secure_note || entry.secureNote}</p>
                       </div>
                     ) : (
                       <div className="mt-3 bg-secondary/30 border border-border/50 p-3 rounded-xl flex items-center justify-between gap-3">
