@@ -7,7 +7,7 @@ export async function GET() {
       .from('assessments')
       .select('*')
       .eq('user_id', DEMO_USER_ID)
-      .order('date', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return NextResponse.json(data || []);

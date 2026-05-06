@@ -235,16 +235,20 @@ export default function Assessment() {
     ),
   );
 
-  // Load history from localStorage
+  // Load history from Supabase API
   useEffect(() => {
-    const saved = localStorage.getItem("assessment_history");
-    if (saved) {
-      try {
-        setHistoryData(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse history", e);
-      }
-    }
+    fetch("/api/assessment")
+      .then((res) => res.json())
+      .then((data) => {
+        // Map database fields to the format used in the chart
+        const mappedHistory = (data || []).map(item => ({
+          ...item,
+          // Convert ISO date to "Month Day" for chart display
+          date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        }));
+        setHistoryData(mappedHistory);
+      })
+      .catch((err) => console.error("Failed to load assessment history:", err));
   }, []);
 
   const quizMeta = ASSESSMENTS[currentQuizType];
@@ -292,15 +296,32 @@ export default function Assessment() {
 
     const newAssessment = {
       type: currentQuizType,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      date: new Date().toISOString(),
       score: totalScore,
+      totalScore: 30,
+      questionCount: questions.length,
       severity,
+      answers: answers
     };
 
-    // Save to local history for the chart
-    const updatedHistory = [...historyData, newAssessment].slice(-7); // Keep last 7
-    setHistoryData(updatedHistory);
-    localStorage.setItem("assessment_history", JSON.stringify(updatedHistory));
+    try {
+      const res = await fetch("/api/assessment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newAssessment)
+      });
+
+      if (res.ok) {
+        const savedData = await res.json();
+        const mappedSaved = {
+          ...savedData,
+          date: new Date(savedData.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        };
+        setHistoryData(prev => [mappedSaved, ...prev].slice(0, 7));
+      }
+    } catch (err) {
+      console.error("Failed to save assessment to database:", err);
+    }
 
     // Show celebration before results
     setView("celebrating");
@@ -351,40 +372,133 @@ export default function Assessment() {
       </div>
 
       {view === "list" && (
-        <div className="grid gap-4 md:grid-cols-3">
-          {listEntries.map((type) => {
-            const meta = ASSESSMENTS[type];
-            const Icon = meta.icon;
-            return (
-              <Card
-                key={type}
-                className="border-0 shadow-sm ring-1 ring-border/50 hover:ring-primary/40 transition-colors flex flex-col"
-              >
-                <CardHeader className="flex-1">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Icon className={cn("h-5 w-5", meta.accent)} />
-                    {type}
-                  </CardTitle>
-                  <CardDescription>{meta.description}</CardDescription>
-                  <p className="text-xs text-muted-foreground pt-2">
-                    10 questions · 4-point scale
-                  </p>
-                </CardHeader>
-                <CardFooter className="border-t-0 bg-transparent pt-0">
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full rounded-full bg-secondary/30",
-                      "hover:bg-primary hover:text-primary-foreground hover:border-primary",
-                    )}
-                    onClick={() => startQuiz(type)}
-                  >
-                    Start <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </CardFooter>
+        <div className="space-y-10">
+          <div className="grid gap-4 md:grid-cols-3">
+            {listEntries.map((type) => {
+              const meta = ASSESSMENTS[type];
+              const Icon = meta.icon;
+              return (
+                <Card
+                  key={type}
+                  className="border-0 shadow-sm ring-1 ring-border/50 hover:ring-primary/40 transition-colors flex flex-col"
+                >
+                  <CardHeader className="flex-1">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Icon className={cn("h-5 w-5", meta.accent)} />
+                      {type}
+                    </CardTitle>
+                    <CardDescription>{meta.description}</CardDescription>
+                    <p className="text-xs text-muted-foreground pt-2">
+                      10 questions · 4-point scale
+                    </p>
+                  </CardHeader>
+                  <CardFooter className="border-t-0 bg-transparent pt-0">
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full rounded-full bg-secondary/30",
+                        "hover:bg-primary hover:text-primary-foreground hover:border-primary",
+                      )}
+                      onClick={() => startQuiz(type)}
+                    >
+                      Start <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Assessment History - Responsive Cards for Mobile, Table for Desktop */}
+          {historyData.length > 0 && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h3 className="text-xl font-heading font-bold text-foreground flex items-center gap-2">
+                  <Stars className="h-5 w-5 text-amber-500" />
+                  Your Assessment History
+                </h3>
+
+                {/* Score Range Legend */}
+                <div className="flex flex-wrap gap-3 p-2 bg-secondary/30 rounded-2xl border border-border/50">
+                  <div className="flex items-center gap-1.5 px-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Low (0-9)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2 border-x border-border/50">
+                    <div className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mod (10-20)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2">
+                    <div className="w-2 h-2 rounded-full bg-rose-500" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">High (21-30)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop Table View */}
+              <Card className="hidden md:block border-0 shadow-sm ring-1 ring-border/50 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-secondary/50 text-muted-foreground font-medium border-b border-border/50">
+                      <tr>
+                        <th className="px-6 py-4">Date</th>
+                        <th className="px-6 py-4">Type</th>
+                        <th className="px-6 py-4">Score</th>
+                        <th className="px-6 py-4">Severity</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {historyData.map((item, i) => (
+                        <tr key={item.id || i} className="hover:bg-secondary/20 transition-colors group">
+                          <td className="px-6 py-4 text-muted-foreground">{item.date}</td>
+                          <td className="px-6 py-4 font-semibold text-foreground">{item.type}</td>
+                          <td className="px-6 py-4">
+                            <span className="font-mono bg-secondary px-2 py-0.5 rounded text-primary">{item.score}/30</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <Badge className={cn(
+                              "rounded-full px-3",
+                              item.severity === "Low" && "bg-emerald-500/10 text-emerald-600 border-emerald-200",
+                              item.severity === "Moderate" && "bg-amber-500/10 text-amber-600 border-amber-200",
+                              item.severity === "High" && "bg-rose-500/10 text-rose-600 border-rose-200",
+                            )}>
+                              {item.severity}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </Card>
-            );
-          })}
+
+              {/* Mobile Card View */}
+              <div className="grid gap-3 md:hidden">
+                {historyData.map((item, i) => (
+                  <Card key={item.id || i} className="border-0 shadow-sm ring-1 ring-border/50 p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">{item.date}</p>
+                        <p className="font-bold text-foreground">{item.type}</p>
+                      </div>
+                      <Badge className={cn(
+                        "rounded-full px-2 py-0",
+                        item.severity === "Low" && "bg-emerald-500/10 text-emerald-600 border-emerald-200",
+                        item.severity === "Moderate" && "bg-amber-500/10 text-amber-600 border-amber-200",
+                        item.severity === "High" && "bg-rose-500/10 text-rose-600 border-rose-200",
+                      )}>
+                        {item.severity}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                      <span className="text-xs text-muted-foreground font-medium">Final Score</span>
+                      <span className="font-mono font-bold text-primary">{item.score} / 30</span>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -614,12 +728,19 @@ export default function Assessment() {
           </CardContent>
 
           <CardFooter className="flex flex-col gap-3 max-w-md mx-auto w-full pb-10 bg-transparent border-t-0 px-6">
-            <Button className="w-full rounded-full h-12 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all" asChild>
-              <a href="/companion">Chat with AI Companion</a>
+            <Button
+              className="w-full rounded-full h-12 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              onClick={() => window.location.href = "/companion"}
+            >
+              Chat with AI Companion
             </Button>
             <div className="grid grid-cols-2 gap-3 w-full">
-              <Button className="rounded-full h-11" variant="secondary" asChild>
-                <a href="/tools">Guided Tools</a>
+              <Button
+                className="rounded-full h-11"
+                variant="secondary"
+                onClick={() => window.location.href = "/tools"}
+              >
+                Guided Tools
               </Button>
               <Button
                 variant="outline"
@@ -629,7 +750,7 @@ export default function Assessment() {
                   setResultInsights(null);
                 }}
               >
-                Retake
+                Back
               </Button>
             </div>
           </CardFooter>
