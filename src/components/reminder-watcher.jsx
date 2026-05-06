@@ -6,8 +6,9 @@ import { useToast } from "@/components/ui/toast-custom";
 export function ReminderWatcher() {
   const { addToast } = useToast();
   const [reminders, setReminders] = useState([]);
-  const remindersRef = useRef([]); // To keep the latest reminders accessible in the interval
-  const lastChecked = useRef(""); // To prevent double triggers in the same minute
+  const remindersRef = useRef([]); 
+  const triggeredRef = useRef(new Set()); // Track "id-HH:mm" to prevent double triggers
+  const lastMinuteRef = useRef(""); // To clear the triggered set every new minute
 
   useEffect(() => {
     // Request notification permission on mount
@@ -29,45 +30,50 @@ export function ReminderWatcher() {
 
     fetchReminders();
     
-    // Interval 1: Refresh data every 30s
-    const listInterval = setInterval(fetchReminders, 30000);
+    // Listen for manual updates to sync immediately
+    const handleManualUpdate = () => fetchReminders();
+    window.addEventListener('mindbloom:reminders-updated', handleManualUpdate);
+    
+    // Interval 1: Refresh data every 20s (fallback)
+    const listInterval = setInterval(fetchReminders, 20000);
 
-    // Interval 2: Check time every 15s for higher precision
+    // Interval 2: Check time every 1s for high precision
     const checkInterval = setInterval(() => {
       const now = new Date();
       const hh = String(now.getHours()).padStart(2, "0");
       const mm = String(now.getMinutes()).padStart(2, "0");
       const currentTime = `${hh}:${mm}`;
-      const isNewMinute = currentTime !== lastChecked.current;
       
-      if (isNewMinute) {
-        lastChecked.current = currentTime;
+      // Clear the triggered set if the minute has changed
+      if (currentTime !== lastMinuteRef.current) {
+        triggeredRef.current.clear();
+        lastMinuteRef.current = currentTime;
       }
 
       // Emit status update for the debug UI
       window.dispatchEvent(new CustomEvent('mindbloom:watcher-update', {
         detail: {
           currentTime,
-          lastChecked: lastChecked.current,
           watchingCount: remindersRef.current.length,
           status: "Active"
         }
       }));
 
-      if (!isNewMinute) return;
-
       remindersRef.current.forEach((reminder) => {
-        // Enforced format HH:mm in data.json makes this simple
         const rTime = reminder.time.trim();
+        const triggerKey = `${reminder.id}-${currentTime}`;
         
-        if (rTime === currentTime) {
-          console.log(`[MindBloom Watcher] MATCH FOUND! Triggering ${reminder.title}`);
+        // Match found AND not already triggered this minute
+        if (rTime === currentTime && !triggeredRef.current.has(triggerKey)) {
+          console.log(`[MindBloom Watcher] MATCH! Triggering ${reminder.title} at ${currentTime}`);
+          triggeredRef.current.add(triggerKey);
           triggerNotification(reminder);
         }
       });
-    }, 15000);
+    }, 1000); 
 
     return () => {
+      window.removeEventListener('mindbloom:reminders-updated', handleManualUpdate);
       clearInterval(listInterval);
       clearInterval(checkInterval);
     };
