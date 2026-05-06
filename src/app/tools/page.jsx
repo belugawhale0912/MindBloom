@@ -54,7 +54,7 @@ export default function GuidedTools() {
     ],
     "Body Scan Meditation": [
       { id: "aH72AScs0qk", title: "10 Minute Body Scan Meditation", channelTitle: "Priory" },
-      { id: "15q-N-_kkrU", title: "Body Scan Exercise, Jon Kabat-Zinn", channelTitle: "Be You Fully" },
+      { id: "jH9c0P58Gsc", title: "Mindfulness Body Scan", channelTitle: "Our Mental Health Space - Sussex Partnership NHS Foundation Trust" },
     ],
     "Sleep Meditation": [
       { id: "aEqlQvczMJQ", title: "10-Minute Meditation For Sleep", channelTitle: "Goodful" },
@@ -100,8 +100,7 @@ export default function GuidedTools() {
     if (!journalContent.trim() || isSavingJournal) return;
     setIsSavingJournal(true);
     const newEntry = {
-      date: new Date().toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric" }),
-      createdAt: new Date().toISOString(),
+      date: new Date().toISOString(),
       content: journalContent,
     };
     try {
@@ -296,7 +295,7 @@ export default function GuidedTools() {
           </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card 
+            <Card
               onClick={() => setBreathingMode("Box Breathing")}
               className={`border-0 shadow-sm ring-1 ring-border/50 cursor-pointer transition-colors ${breathingMode === "Box Breathing" ? "bg-primary/10 ring-primary/50" : ""}`}
             >
@@ -307,7 +306,7 @@ export default function GuidedTools() {
                 <CardDescription>4-4-4-4 technique for focus</CardDescription>
               </CardHeader>
             </Card>
-            <Card 
+            <Card
               onClick={() => setBreathingMode("4-7-8 Relaxing")}
               className={`border-0 shadow-sm ring-1 ring-border/50 cursor-pointer transition-colors ${breathingMode === "4-7-8 Relaxing" ? "bg-primary/10 ring-primary/50" : ""}`}
             >
@@ -316,7 +315,7 @@ export default function GuidedTools() {
                 <CardDescription>Deep calm & sleep aid</CardDescription>
               </CardHeader>
             </Card>
-            <Card 
+            <Card
               onClick={() => setBreathingMode("Deep Calm")}
               className={`border-0 shadow-sm ring-1 ring-border/50 cursor-pointer transition-colors ${breathingMode === "Deep Calm" ? "bg-primary/10 ring-primary/50" : ""}`}
             >
@@ -366,11 +365,10 @@ export default function GuidedTools() {
                       onClick={() => {
                         setSelectedMeditationVideoId(video.id);
                       }}
-                      className={`w-full rounded-xl border px-3 py-2 text-left transition-colors ${
-                        selectedMeditationVideoId === video.id
+                      className={`w-full rounded-xl border px-3 py-2 text-left transition-colors ${selectedMeditationVideoId === video.id
                           ? "border-primary bg-primary/10"
                           : "border-border/60 hover:border-primary/40"
-                      }`}
+                        }`}
                     >
                       <p className="text-sm font-semibold text-foreground line-clamp-2">{video.title}</p>
                       <p className="text-xs text-muted-foreground">{video.channelTitle}</p>
@@ -440,7 +438,7 @@ export default function GuidedTools() {
                 disabled={isSavingJournal}
               />
 
-              <Button 
+              <Button
                 onClick={handleSaveJournal}
                 disabled={!journalContent.trim() || isSavingJournal}
                 className="w-full md:w-auto rounded-full bg-[#b8860b] hover:bg-[#b8860b]/90 text-white"
