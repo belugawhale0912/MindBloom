@@ -39,7 +39,7 @@ export default function Settings() {
         if (data.darkMode !== undefined) {
           const currentTheme = localStorage.getItem("theme");
           const apiTheme = data.darkMode ? "dark" : "light";
-          
+
           if (currentTheme !== apiTheme) {
             setDarkMode(data.darkMode);
             if (data.darkMode) {
@@ -57,7 +57,7 @@ export default function Settings() {
     // 3. Move and Show persistent Google Translate widget
     const persistentWidget = document.getElementById('google_translate_element');
     const anchor = document.getElementById('google_translate_anchor');
-    
+
     if (persistentWidget && anchor) {
       anchor.appendChild(persistentWidget);
       persistentWidget.style.display = 'block';
@@ -112,6 +112,46 @@ export default function Settings() {
 
       <div className="space-y-6">
         {/* Preferences */}
+        <style jsx global>{`
+          .goog-te-gadget-simple {
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            font-size: 14px !important;
+            font-family: inherit !important;
+            display: flex !important;
+            align-items: center !important;
+            cursor: pointer !important;
+          }
+          .goog-te-gadget-simple img {
+            display: none !important;
+          }
+          .goog-te-menu-value {
+            margin: 0 !important;
+            color: inherit !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 4px;
+          }
+          .goog-te-menu-value span {
+            color: inherit !important;
+          }
+          .goog-te-menu-value:after {
+            content: '▾';
+            margin-left: 4px;
+            opacity: 0.5;
+          }
+          .goog-te-gadget-simple .goog-te-menu-value span:nth-child(3),
+          .goog-te-gadget-simple .goog-te-menu-value span:nth-child(5) {
+            display: none !important;
+          }
+          iframe.goog-te-banner-frame {
+            display: none !important;
+          }
+          body {
+            top: 0 !important;
+          }
+        `}</style>
         <Card className="border-0 shadow-sm ring-1 ring-border/50">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -141,9 +181,9 @@ export default function Settings() {
                   Preferred language for the interface
                 </p>
               </div>
-              <div 
-                id="google_translate_anchor" 
-                style={{ minHeight: '38px', minWidth: '120px', display: 'flex', alignItems: 'center' }}
+              <div
+                id="google_translate_anchor"
+                className="min-h-[40px] min-w-[140px] flex items-center justify-center bg-secondary/30 px-4 py-1.5 rounded-full border border-border/50 hover:bg-secondary/50 transition-colors cursor-pointer group text-sm font-medium text-foreground"
               >
                 {/* The persistent widget will be appended here via useEffect */}
               </div>
