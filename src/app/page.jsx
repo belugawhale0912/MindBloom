@@ -3,9 +3,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageCircleHeart, Flower2, Smile, Bell, Sparkles, TrendingUp } from "lucide-react";
+import { MessageCircleHeart, Flower2, Smile, Bell, Sparkles, TrendingUp, ClipboardCheck, Archive, User, LineChart, BookOpen } from "lucide-react";
 import Link from "next/link";
-import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,8 @@ export default function Dashboard() {
   const [upcomingReminder, setUpcomingReminder] = useState({ title: "No upcoming reminders", time: "" });
   const [userSettings, setUserSettings] = useState({ name: "Alex" });
   const [streak, setStreak] = useState(0);
+  const [recentJournal, setRecentJournal] = useState(null);
+  const [latestAssessment, setLatestAssessment] = useState(null);
 
   useEffect(() => {
     // Fetch settings
@@ -35,11 +37,31 @@ export default function Dashboard() {
           setStreak(dates.length); // Simplified streak for prototype: total unique days
         }
 
-        const recent = data.slice(0, 7).reverse();
-        const formatted = recent.map(entry => ({
-          day: entry.date.split(',')[0].split(' ')[0],
-          mood: entry.level || 3
-        }));
+        // Keep only the latest entry per unique day
+        const uniqueDaysMap = new Map();
+        data.forEach(entry => {
+          if (!uniqueDaysMap.has(entry.date)) {
+            uniqueDaysMap.set(entry.date, entry);
+          }
+        });
+        const uniqueEntries = Array.from(uniqueDaysMap.values());
+
+        // Build an array of the last 7 chronological days to ensure left-to-right layout
+        const last7Days = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const dateStr = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+          const dayName = dateStr.split(',')[0];
+          
+          const entry = uniqueDaysMap.get(dateStr);
+          last7Days.push({
+            day: dayName,
+            mood: entry ? entry.level : null
+          });
+        }
+
+        const formatted = last7Days;
 
         if (formatted.length === 0) {
           setMoodData([
@@ -67,6 +89,26 @@ export default function Dashboard() {
         }
       })
       .catch(err => console.error("Failed to fetch reminders", err));
+
+    // Fetch recent journal
+    fetch("/api/journal")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          setRecentJournal(data[0]);
+        }
+      })
+      .catch(err => console.error("Failed to fetch journal", err));
+
+    // Fetch latest assessment
+    fetch("/api/assessment")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          setLatestAssessment(data[0]);
+        }
+      })
+      .catch(err => console.error("Failed to fetch assessment", err));
   }, []);
 
   const handleMoodSelect = async (idx) => {
@@ -145,18 +187,43 @@ export default function Dashboard() {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Quote Card - Standard Style */}
-          <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-secondary/30 to-transparent flex flex-col justify-center p-6">
-            <CardContent className="p-0 text-center space-y-4">
-              <p className="text-lg font-medium text-foreground leading-relaxed italic">
-                "You don't have to control your thoughts. You just have to stop
-                letting them control you."
-              </p>
-              <p className="text-[10px] text-muted-foreground font-bold tracking-[0.2em] uppercase">
-                — Dan Millman
-              </p>
-            </CardContent>
-          </Card>
+          {/* Recent Journal or Quote */}
+          {recentJournal ? (
+            <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-blue-50 to-transparent">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-blue-500" />
+                    Latest Journal
+                  </span>
+                  <Link
+                    href="/profile"
+                    className="text-xs text-blue-500 font-bold hover:underline uppercase tracking-wider"
+                  >
+                    View All
+                  </Link>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <h4 className="font-semibold text-sm">{recentJournal.title}</h4>
+                <p className="text-xs text-muted-foreground line-clamp-3">
+                  {recentJournal.content}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-secondary/30 to-transparent flex flex-col justify-center p-6">
+              <CardContent className="p-0 text-center space-y-4">
+                <p className="text-lg font-medium text-foreground leading-relaxed italic">
+                  "You don't have to control your thoughts. You just have to stop
+                  letting them control you."
+                </p>
+                <p className="text-[10px] text-muted-foreground font-bold tracking-[0.2em] uppercase">
+                  — Dan Millman
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Trend Card - Compact Visual */}
           <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-card">
@@ -191,6 +258,7 @@ export default function Dashboard() {
                         fontWeight: 500
                       }}
                     />
+                    <YAxis domain={[0, 5]} hide={true} />
                     <Tooltip
                       cursor={{ fill: "var(--color-secondary)", radius: 4 }}
                       contentStyle={{
@@ -203,6 +271,7 @@ export default function Dashboard() {
                     />
                     <Bar
                       dataKey="mood"
+                      name="Mood"
                       fill="var(--color-primary)"
                       radius={[4, 4, 4, 4]}
                       barSize={18}
@@ -214,7 +283,7 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Shortcuts Section - Standard Grid */}
+        {/* Shortcuts Section - Expanded Grid */}
         <section className="space-y-4 pt-2">
           <h3 className="text-lg font-bold tracking-tight px-1">Quick Shortcuts</h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -223,9 +292,13 @@ export default function Dashboard() {
               { href: "/tools", icon: Flower2, title: "Tools", desc: "Regulate system", color: "text-emerald-500", bg: "bg-emerald-50" },
               { href: "/zen", icon: Sparkles, title: "Zen", desc: "Find calm", color: "text-purple-500", bg: "bg-purple-50" },
               { href: "/mood", icon: Smile, title: "Mood", desc: "Track patterns", color: "text-amber-500", bg: "bg-amber-50" },
+              { href: "/assessment", icon: ClipboardCheck, title: "Assessment", desc: "Check in", color: "text-indigo-500", bg: "bg-indigo-50" },
+              { href: "/kit", icon: Archive, title: "Calm Kit", desc: "Your sanctuary", color: "text-teal-500", bg: "bg-teal-50" },
+              { href: "/insights", icon: LineChart, title: "Insights", desc: "View progress", color: "text-blue-500", bg: "bg-blue-50" },
+              { href: "/profile", icon: User, title: "Profile", desc: "Journal & Data", color: "text-slate-500", bg: "bg-slate-50" },
             ].map((item) => (
               <Link key={item.href} href={item.href} className="group">
-                <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-card hover:ring-primary/40 transition-all duration-300">
+                <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-card hover:ring-primary/40 transition-all duration-300 h-full">
                   <CardContent className="p-4 flex flex-col items-center text-center gap-3">
                     <div className={cn("p-3 rounded-xl transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground", item.bg, item.color)}>
                       <item.icon className="h-5 w-5" />
@@ -240,6 +313,31 @@ export default function Dashboard() {
             ))}
           </div>
         </section>
+
+        {latestAssessment && (
+          <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-indigo-50/50">
+            <CardContent className="p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="bg-indigo-100 text-indigo-500 p-2.5 rounded-xl shadow-sm border border-indigo-200">
+                  <ClipboardCheck className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
+                    Latest Assessment ({latestAssessment.type})
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-0.5 font-medium">
+                    Severity: {latestAssessment.severity} | Score: {latestAssessment.score}/{latestAssessment.total_score}
+                  </p>
+                </div>
+              </div>
+              <Link href="/assessment">
+                <Button variant="ghost" size="sm" className="rounded-full text-indigo-600 hover:bg-indigo-100 text-xs font-bold px-4">
+                  Retake
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Upcoming Reminder - Standard Card */}
         <Card className="border-0 shadow-sm ring-1 ring-primary/20 bg-primary/5">

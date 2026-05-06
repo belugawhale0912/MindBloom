@@ -13,15 +13,9 @@ export async function GET() {
 
     if (error) throw error;
 
-    // If no reminders, return defaults (matching original logic)
+    // If no reminders, return empty array
     if (!data || data.length === 0) {
-      const defaultReminders = [
-        { title: "Morning Check-in", time: "08:00", active: true, icon: "Sunrise", color: "text-orange-500", freq: "Daily" },
-        { title: "Midday Mood Log", time: "12:30", active: false, icon: "SunMedium", color: "text-amber-500", freq: "Weekdays" },
-        { title: "Evening Reflection", time: "20:00", active: true, icon: "Moon", color: "text-indigo-500", freq: "Daily" },
-        { title: "Take a Break", time: "15:00", active: false, icon: "Coffee", color: "text-brown-500", freq: "Custom" }
-      ];
-      return NextResponse.json(defaultReminders);
+      return NextResponse.json([]);
     }
 
     return NextResponse.json(data);
