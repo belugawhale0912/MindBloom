@@ -20,6 +20,7 @@ import {
   Anchor,
   Pause,
   Sparkles,
+  Bookmark,
 } from "lucide-react";
 
 export default function GuidedTools() {
@@ -38,6 +39,7 @@ export default function GuidedTools() {
   const [journalContent, setJournalContent] = useState("");
   const [savedJournals, setSavedJournals] = useState([]);
   const [isSavingJournal, setIsSavingJournal] = useState(false);
+  const [journalViewMode, setJournalViewMode] = useState("all");
 
   const meditationTopics = [
     { label: "Morning Mindfulness", value: "Morning Mindfulness" },
@@ -121,6 +123,22 @@ export default function GuidedTools() {
     }
   };
 
+  const handleToggleCollect = async (id, currentStatus) => {
+    try {
+      const res = await fetch("/api/journal", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, is_collected: !currentStatus })
+      });
+      if (res.ok) {
+        const updatedEntry = await res.json();
+        setSavedJournals(prev => prev.map(entry => entry.id === id ? updatedEntry : entry));
+      }
+    } catch (e) {
+      console.error("Failed to toggle collect status", e);
+    }
+  };
+
   // Breathing logic
   useEffect(() => {
     let interval;
@@ -160,7 +178,11 @@ export default function GuidedTools() {
 
   const journalsGroupedByDay = useMemo(() => {
     const groups = {};
-    savedJournals.forEach((entry) => {
+    const filteredJournals = journalViewMode === "collected" 
+      ? savedJournals.filter(entry => entry.is_collected)
+      : savedJournals;
+
+    filteredJournals.forEach((entry) => {
       const parsedDate = entry.createdAt ? new Date(entry.createdAt) : new Date(entry.date);
       const safeDate = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
       const dayKey = safeDate.toLocaleDateString("en-CA");
@@ -179,7 +201,7 @@ export default function GuidedTools() {
       groups[dayKey].entries.push(entry);
     });
     return Object.entries(groups).sort(([a], [b]) => (a > b ? -1 : 1));
-  }, [savedJournals]);
+  }, [savedJournals, journalViewMode]);
 
   const journalStreak = useMemo(() => {
     if (savedJournals.length === 0) return 0;
@@ -451,13 +473,31 @@ export default function GuidedTools() {
           {/* Past Journals */}
           <div className="mt-8 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-heading font-semibold text-foreground text-lg">Your Past Entries</h3>
+              <div className="flex items-center gap-4">
+                <h3 className="font-heading font-semibold text-foreground text-lg">Your Past Entries</h3>
+                <div className="flex bg-secondary/50 rounded-full p-1">
+                  <button 
+                    onClick={() => setJournalViewMode("all")}
+                    className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${journalViewMode === "all" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    All
+                  </button>
+                  <button 
+                    onClick={() => setJournalViewMode("collected")}
+                    className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${journalViewMode === "collected" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    Collection
+                  </button>
+                </div>
+              </div>
               <Badge variant="secondary" className="bg-[#b8860b]/10 text-[#b8860b] border border-[#b8860b]/20">
                 {journalStreak} day streak
               </Badge>
             </div>
-            {savedJournals.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No entries yet. Start writing above!</p>
+            {journalsGroupedByDay.length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                {journalViewMode === "collected" ? "No collected entries yet. Star an entry to add it here!" : "No entries yet. Start writing above!"}
+              </p>
             ) : (
               <div className="grid gap-4">
                 {journalsGroupedByDay.map(([dayKey, dayGroup]) => (
@@ -468,8 +508,17 @@ export default function GuidedTools() {
                     <CardContent className="space-y-3">
                       {dayGroup.entries.map((entry, index) => (
                         <div key={entry.id}>
-                          <div className="rounded-xl bg-background/60 p-3 text-sm text-foreground whitespace-pre-wrap">
-                            {entry.content}
+                          <div className="rounded-xl bg-background/60 p-3 text-sm text-foreground whitespace-pre-wrap relative group">
+                            <button
+                              onClick={() => handleToggleCollect(entry.id, entry.is_collected)}
+                              className={`absolute top-2 right-2 p-1.5 rounded-full transition-colors ${entry.is_collected ? "text-[#b8860b] bg-[#b8860b]/10" : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-secondary"}`}
+                              title={entry.is_collected ? "Remove from Collection" : "Add to Collection"}
+                            >
+                              <Bookmark className="h-4 w-4" fill={entry.is_collected ? "currentColor" : "none"} />
+                            </button>
+                            <div className="pr-8">
+                              {entry.content}
+                            </div>
                           </div>
                           {index < dayGroup.entries.length - 1 && <hr className="my-3 border-border/60" />}
                         </div>

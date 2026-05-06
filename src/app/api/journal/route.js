@@ -41,3 +41,27 @@ export async function POST(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PATCH(request) {
+  try {
+    const { id, is_collected } = await request.json();
+
+    if (!id) {
+      return NextResponse.json({ error: 'Missing entry id' }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('journal_entries')
+      .update({ is_collected })
+      .eq('id', id)
+      .eq('user_id', DEMO_USER_ID)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json(data, { status: 200 });
+  } catch (error) {
+    console.error('Supabase PATCH Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
