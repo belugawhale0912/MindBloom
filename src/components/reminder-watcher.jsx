@@ -95,7 +95,7 @@ export function ReminderWatcher() {
     if ("Notification" in window && Notification.permission === "granted") {
       new Notification("MindBloom Reminder", {
         body: reminder.title,
-        icon: "/favicon.ico",
+        icon: "/logo.png",
       });
     }
 
