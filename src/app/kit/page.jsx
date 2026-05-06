@@ -45,7 +45,10 @@ export default function CalmKit() {
 
     fetch("/api/kit/items")
       .then(res => res.json())
-      .then(data => setItems(Array.isArray(data) ? data : []))
+      .then(data => {
+        console.log("Kit Items with URLs:", data);
+        setItems(Array.isArray(data) ? data : []);
+      })
       .catch(err => console.error(err));
   }, []);
 
