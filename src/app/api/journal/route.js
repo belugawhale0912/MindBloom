@@ -22,11 +22,9 @@ export async function POST(request) {
     const newEntry = await request.json();
 
     const entryToInsert = {
-      title: newEntry.title,
       content: newEntry.content,
       date: newEntry.date || new Date().toISOString(),
       mood: newEntry.mood,
-      tags: newEntry.tags || [],
       user_id: DEMO_USER_ID
     };
 
