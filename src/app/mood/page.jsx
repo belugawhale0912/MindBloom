@@ -19,7 +19,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { X, Delete } from "lucide-react";
+import { X, Delete, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = ["School", "Family", "Social", "Work", "Health", "Finances"];
@@ -114,6 +114,7 @@ export default function MoodTracker() {
   }, [isSecureMode, pinMode, savedAutoPin]);
 
   const [unlockedEntries, setUnlockedEntries] = useState([]);
+  const [editingEntryId, setEditingEntryId] = useState(null);
 
   const [isKeypadOpen, setIsKeypadOpen] = useState(false);
   const [keypadContext, setKeypadContext] = useState(null);
@@ -182,6 +183,48 @@ export default function MoodTracker() {
   const [pastEntries, setPastEntries] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
 
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this entry?")) return;
+    try {
+      const res = await fetch(`/api/mood/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setPastEntries(prev => prev.filter(e => (e.id || e.timestamp) !== id));
+      }
+    } catch (err) {
+      console.error("Failed to delete entry:", err);
+    }
+  };
+
+  const handleEdit = (entry) => {
+    if ((entry.is_locked || entry.isLocked) && !unlockedEntries.includes(entry.id || entry.timestamp)) {
+      alert("Please unlock the entry first before editing.");
+      return;
+    }
+    setMoodValue([entry.detailed_score || (entry.level * 2)]);
+    const newCategories = [];
+    const newImpacts = {};
+    if (entry.tags && Array.isArray(entry.tags)) {
+      entry.tags.forEach(tag => {
+        const parts = typeof tag === 'string' ? tag.split(': ') : [];
+        if (parts.length === 2) {
+          newCategories.push(parts[0]);
+          newImpacts[parts[0]] = parts[1];
+        }
+      });
+    }
+    setSelectedCategories(newCategories);
+    setCategoryImpacts(newImpacts);
+    if (entry.is_locked || entry.isLocked) {
+      setIsSecureMode(true);
+      setSecureNote(entry.secure_note || entry.secureNote || "");
+    } else {
+      setIsSecureMode(false);
+      setNote(entry.note || "");
+    }
+    setEditingEntryId(entry.id || entry.timestamp);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     fetch("/api/mood")
       .then((res) => res.json())
@@ -237,10 +280,24 @@ export default function MoodTracker() {
     // Generate emoji based on 1-10 scale
     const currentMoodEmoji = MOOD_EMOJIS[moodValue[0]];
 
+    // If editing, preserve the original date/time, otherwise use now
+    let entryDate = now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    let entryTime = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    let entryTimestamp = now.toISOString();
+
+    if (editingEntryId) {
+      const existingEntry = pastEntries.find(e => (e.id || e.timestamp) === editingEntryId);
+      if (existingEntry) {
+        entryDate = existingEntry.date;
+        entryTime = existingEntry.time;
+        entryTimestamp = existingEntry.timestamp;
+      }
+    }
+
     const newEntry = {
-      date: now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
-      time: now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
-      timestamp: now.toISOString(),
+      date: entryDate,
+      time: entryTime,
+      timestamp: entryTimestamp,
       emoji: currentMoodEmoji,
       level: Math.round(moodValue[0] / 2), // map 1-10 back to 1-5 scale for backwards compatibility
       tags: tagsArray,
@@ -253,22 +310,41 @@ export default function MoodTracker() {
     };
 
     try {
-      const res = await fetch("/api/mood", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newEntry),
-      });
-      if (res.ok) {
-        const savedEntry = await res.json();
-        setPastEntries([savedEntry, ...pastEntries]);
+      if (editingEntryId) {
+        const res = await fetch(`/api/mood/${editingEntryId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newEntry),
+        });
+        if (res.ok) {
+          const updatedEntry = await res.json();
+          setPastEntries(prev => prev.map(e => (e.id || e.timestamp) === editingEntryId ? updatedEntry : e));
+          setEditingEntryId(null);
+          // Reset state
+          setMoodValue([5]);
+          setSelectedCategories([]);
+          setCategoryImpacts({});
+          setNote("");
+          setSecureNote("");
+        }
+      } else {
+        const res = await fetch("/api/mood", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newEntry),
+        });
+        if (res.ok) {
+          const savedEntry = await res.json();
+          setPastEntries([savedEntry, ...pastEntries]);
 
-        // Reset state
-        setMoodValue([5]);
-        setSelectedCategories([]);
-        setCategoryImpacts({});
-        setNote("");
-        setSecureNote("");
-        // Intentionally not resetting isSecureMode and pinMode to remember the user's choice
+          // Reset state
+          setMoodValue([5]);
+          setSelectedCategories([]);
+          setCategoryImpacts({});
+          setNote("");
+          setSecureNote("");
+          // Intentionally not resetting isSecureMode and pinMode to remember the user's choice
+        }
       }
     } catch (err) {
       console.error("Failed to save mood:", err);
@@ -478,7 +554,7 @@ export default function MoodTracker() {
                       checked={isSecureMode}
                       onCheckedChange={setIsSecureMode}
                     />
-                    <label htmlFor="secure-mode" className="text-xs cursor-pointer font-medium text-muted-foreground">Secure Brain Dump mode</label>
+                    <label htmlFor="secure-mode" className="text-xs cursor-pointer font-medium text-muted-foreground">Hidden Space</label>
                   </div>
                 </div>
 
@@ -545,8 +621,25 @@ export default function MoodTracker() {
                 }}
                 disabled={isSaving || (isSecureMode && pinMode === 'auto' && savedAutoPin.length !== 6)}
               >
-                {isSaving ? "Saving..." : (isSecureMode && pinMode === 'manual') ? "Lock & Save" : "Save Today's Mood"}
+                {isSaving ? "Saving..." : editingEntryId ? "Update Entry" : (isSecureMode && pinMode === 'manual') ? "Lock & Save" : "Save Today's Mood"}
               </Button>
+              {editingEntryId && (
+                <Button
+                  variant="outline"
+                  className="w-full rounded-full h-12 text-base shadow-sm font-semibold transition-all mt-2"
+                  onClick={() => {
+                    setEditingEntryId(null);
+                    setMoodValue([5]);
+                    setSelectedCategories([]);
+                    setCategoryImpacts({});
+                    setNote("");
+                    setSecureNote("");
+                  }}
+                  disabled={isSaving}
+                >
+                  Cancel Edit
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
@@ -573,12 +666,22 @@ export default function MoodTracker() {
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between items-start mb-1">
-                    <p className="font-semibold text-sm text-foreground">
-                      {entry.date}
-                    </p>
-                    <span className="text-xs text-muted-foreground">
-                      {entry.time}
-                    </span>
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">
+                        {entry.date}
+                      </p>
+                      <span className="text-xs text-muted-foreground">
+                        {entry.time}
+                      </span>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleEdit(entry)} title="Edit">
+                        <Pencil className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-destructive/10" onClick={() => handleDelete(entry.id || entry.timestamp)} title="Delete">
+                        <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive transition-colors" />
+                      </Button>
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5 mb-2 mt-1">
                     {entry.tags?.map((tag) => {

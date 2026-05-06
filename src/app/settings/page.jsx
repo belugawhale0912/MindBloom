@@ -39,7 +39,7 @@ export default function Settings() {
         if (data.darkMode !== undefined) {
           const currentTheme = localStorage.getItem("theme");
           const apiTheme = data.darkMode ? "dark" : "light";
-          
+
           if (currentTheme !== apiTheme) {
             setDarkMode(data.darkMode);
             if (data.darkMode) {
@@ -57,7 +57,7 @@ export default function Settings() {
     // 3. Move and Show persistent Google Translate widget
     const persistentWidget = document.getElementById('google_translate_element');
     const anchor = document.getElementById('google_translate_anchor');
-    
+
     if (persistentWidget && anchor) {
       anchor.appendChild(persistentWidget);
       persistentWidget.style.display = 'block';
@@ -112,6 +112,87 @@ export default function Settings() {
 
       <div className="space-y-6">
         {/* Preferences */}
+        <style jsx global>{`
+          .goog-te-gadget-simple {
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            font-size: 14px !important;
+            font-family: inherit !important;
+            display: flex !important;
+            align-items: center !important;
+            cursor: pointer !important;
+          }
+          .goog-te-gadget-simple img {
+            display: none !important;
+          }
+          .goog-te-menu-value {
+            margin: 0 !important;
+            color: inherit !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 4px;
+          }
+          .goog-te-menu-value span {
+            color: inherit !important;
+          }
+          .goog-te-menu-value:after {
+            content: '▾';
+            margin-left: 4px;
+            opacity: 0.5;
+          }
+          .goog-te-gadget-simple .goog-te-menu-value span:nth-child(3),
+          .goog-te-gadget-simple .goog-te-menu-value span:nth-child(5) {
+            display: none !important;
+          }
+          /* 隐藏顶部的 Google 翻译横幅 */
+          iframe.goog-te-banner-frame,
+          .goog-te-banner-frame {
+            display: none !important;
+          }
+          
+          /* 隐藏鼠标悬停时的原始文字提示框 */
+          #goog-gt-tt, 
+          .goog-te-balloon-frame {
+            display: none !important;
+            visibility: hidden !important;
+          }
+          
+          /* 修复页面偏移 */
+          body {
+            top: 0 !important;
+            position: static !important;
+          }
+
+          /* 确保下拉框组件本身是可见且可点击的 */
+          #google_translate_element {
+            display: block !important;
+          }
+          
+          /* 针对简单的 gadget 样式进行优化 */
+          .goog-te-gadget-simple {
+            background-color: #f8fafc !important; /* bg-slate-50 */
+            border: 1px solid #e2e8f0 !important; /* border-slate-200 */
+            padding: 8px 16px !important;
+            border-radius: 9999px !important;
+            display: flex !important;
+            align-items: center !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+          }
+          .dark .goog-te-gadget-simple {
+            background-color: #1e293b !important; /* bg-slate-800 */
+            border-color: #334155 !important; /* border-slate-700 */
+            color: white !important;
+          }
+          .goog-te-gadget-simple:hover {
+            border-color: #7c3aed !important; /* border-primary */
+            background-color: #f1f5f9 !important;
+          }
+          .dark .goog-te-gadget-simple:hover {
+            background-color: #334155 !important;
+          }
+        `}</style>
         <Card className="border-0 shadow-sm ring-1 ring-border/50">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -141,9 +222,9 @@ export default function Settings() {
                   Preferred language for the interface
                 </p>
               </div>
-              <div 
-                id="google_translate_anchor" 
-                style={{ minHeight: '38px', minWidth: '120px', display: 'flex', alignItems: 'center' }}
+              <div
+                id="google_translate_anchor"
+                className="min-h-[40px] flex items-center justify-center transition-colors cursor-pointer group text-sm font-medium text-foreground"
               >
                 {/* The persistent widget will be appended here via useEffect */}
               </div>
