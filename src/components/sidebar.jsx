@@ -87,14 +87,21 @@ export function Sidebar() {
             "px-6 mb-10 transition-all duration-500 flex items-center gap-3 overflow-hidden",
             isCollapsed && !isOpen ? "md:px-5 md:justify-center" : "px-6"
           )}>
-            <div className="min-w-[24px]">
-              <Flower2 className="h-7 w-7 text-primary stroke-[2.5px]" />
+            <div className="min-w-[32px] flex items-center justify-center">
+              <img 
+                src="/logo.png" 
+                alt="mindbloom logo" 
+                className={cn(
+                  "transition-all duration-500 object-contain",
+                  isCollapsed && !isOpen ? "h-10 w-10" : "h-9 w-9"
+                )} 
+              />
             </div>
             <h2 className={cn(
               "text-xl font-bold text-foreground font-heading tracking-tight transition-all duration-300 whitespace-nowrap",
               isCollapsed && !isOpen ? "md:opacity-0 md:w-0" : "opacity-100 w-auto"
             )}>
-              MindBloom
+              mindbloom
             </h2>
           </div>
 
