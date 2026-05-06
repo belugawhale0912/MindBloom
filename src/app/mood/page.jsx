@@ -554,7 +554,7 @@ export default function MoodTracker() {
                       checked={isSecureMode}
                       onCheckedChange={setIsSecureMode}
                     />
-                    <label htmlFor="secure-mode" className="text-xs cursor-pointer font-medium text-muted-foreground">Secure Brain Dump mode</label>
+                    <label htmlFor="secure-mode" className="text-xs cursor-pointer font-medium text-muted-foreground">Hidden Space</label>
                   </div>
                 </div>
 
