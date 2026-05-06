@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label";
 import {
   User,
   Moon,
-  BellRing,
   Globe,
   Shield,
   LogOut,
@@ -24,7 +23,6 @@ import { useState, useEffect } from "react";
 
 export default function Settings() {
   const [darkMode, setDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -38,8 +36,6 @@ export default function Settings() {
     fetch("/api/settings")
       .then(res => res.json())
       .then(data => {
-        setNotifications(data.notifications !== undefined ? data.notifications : true);
-        
         if (data.darkMode !== undefined) {
           const currentTheme = localStorage.getItem("theme");
           const apiTheme = data.darkMode ? "dark" : "light";
@@ -57,6 +53,23 @@ export default function Settings() {
         }
       })
       .catch(err => console.error(err));
+
+    // 3. Move and Show persistent Google Translate widget
+    const persistentWidget = document.getElementById('google_translate_element');
+    const anchor = document.getElementById('google_translate_anchor');
+    
+    if (persistentWidget && anchor) {
+      anchor.appendChild(persistentWidget);
+      persistentWidget.style.display = 'block';
+    }
+
+    return () => {
+      // Hide and move back to body on unmount
+      if (persistentWidget) {
+        persistentWidget.style.display = 'none';
+        document.body.appendChild(persistentWidget);
+      }
+    };
   }, []);
 
   const toggleDarkMode = async (checked) => {
@@ -69,11 +82,6 @@ export default function Settings() {
       localStorage.setItem("theme", "light");
     }
     await saveSettings({ darkMode: checked });
-  };
-
-  const toggleNotifications = async (checked) => {
-    setNotifications(checked);
-    await saveSettings({ notifications: checked });
   };
 
   const saveSettings = async (updates) => {
@@ -127,27 +135,18 @@ export default function Settings() {
             <div className="flex items-center justify-between p-2">
               <div className="space-y-0.5">
                 <Label className="text-base flex items-center gap-2">
-                  <BellRing className="h-4 w-4 text-primary" /> Notifications
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Manage how we send you reminders
-                </p>
-              </div>
-              <Switch checked={notifications} onCheckedChange={toggleNotifications} />
-            </div>
-
-            <div className="flex items-center justify-between p-2">
-              <div className="space-y-0.5">
-                <Label className="text-base flex items-center gap-2">
                   <Globe className="h-4 w-4 text-primary" /> Language
                 </Label>
                 <p className="text-sm text-muted-foreground">
                   Preferred language for the interface
                 </p>
               </div>
-              <span className="text-sm font-semibold bg-secondary/50 text-primary px-4 py-1.5 rounded-full cursor-pointer hover:bg-secondary transition-colors">
-                English (US)
-              </span>
+              <div 
+                id="google_translate_anchor" 
+                style={{ minHeight: '38px', minWidth: '120px', display: 'flex', alignItems: 'center' }}
+              >
+                {/* The persistent widget will be appended here via useEffect */}
+              </div>
             </div>
           </CardContent>
         </Card>

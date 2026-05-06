@@ -17,6 +17,8 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+import Script from "next/script";
+
 export const metadata = {
   title: "MindBloom",
   description: "A gentle mental health companion",
@@ -43,6 +45,45 @@ export default function RootLayout({ children }) {
             </main>
           </div>
         </ToastProvider>
+
+        {/* Persistent Google Translate Element (hidden by default, shown via CSS on settings page) */}
+        <div id="google_translate_element" style={{ display: 'none' }}></div>
+
+        {/* Google Translate Scripts */}
+        <Script id="google-translate-init" strategy="afterInteractive">
+          {`
+            window.googleTranslateElementInit = function() {
+              new window.google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'zh-CN,en,ms,ja,ru,ar',
+                layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE
+              }, 'google_translate_element');
+            }
+
+            // Fix for Google Translate + React DOM conflict
+            if (typeof Node === 'function' && Node.prototype) {
+              const originalRemoveChild = Node.prototype.removeChild;
+              Node.prototype.removeChild = function(child) {
+                if (child.parentNode !== this) {
+                  return child;
+                }
+                return originalRemoveChild.apply(this, arguments);
+              };
+
+              const originalInsertBefore = Node.prototype.insertBefore;
+              Node.prototype.insertBefore = function(newNode, referenceNode) {
+                if (referenceNode && referenceNode.parentNode !== this) {
+                  return newNode;
+                }
+                return originalInsertBefore.apply(this, arguments);
+              };
+            }
+          `}
+        </Script>
+        <Script
+          src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

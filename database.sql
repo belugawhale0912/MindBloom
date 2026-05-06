@@ -38,7 +38,8 @@ CREATE TABLE journal_entries (
   content TEXT,
   date TIMESTAMPTZ DEFAULT NOW(),
   mood TEXT,
-  user_id UUID REFERENCES auth.users(id) DEFAULT auth.uid()
+  user_id UUID REFERENCES auth.users(id) DEFAULT auth.uid(),
+  is_collected BOOLEAN DEFAULT FALSE
 );
 
 -- 4. Reminders
