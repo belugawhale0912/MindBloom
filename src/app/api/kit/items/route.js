@@ -16,7 +16,7 @@ export async function GET() {
       id: item.id,
       url: item.media_path,
       type: item.media_type,
-      title: item.title || (item.media_path ? item.media_path.split('/').pop() : 'Untitled'), // Fallback to filename if title column doesn't exist yet
+      title: item.title || (item.media_path ? item.media_path.split('/').pop().split('?')[0] : 'Untitled'),
       description: item.description || ''
     }));
 
