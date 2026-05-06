@@ -39,7 +39,7 @@ export default function RootLayout({ children }) {
           <div className="flex-1 flex flex-col h-full relative overflow-hidden">
             <TopNavbar />
             <main className="flex-1 overflow-y-auto w-full">
-              <div className="max-w-4xl mx-auto px-4 py-6 md:px-8 md:py-8 w-full">
+              <div className="max-w-7xl mx-auto px-4 py-6 md:px-8 md:py-8 w-full">
                 {children}
               </div>
             </main>
