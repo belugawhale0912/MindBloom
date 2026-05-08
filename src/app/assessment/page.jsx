@@ -34,6 +34,8 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
+import AssessmentBrain from "@/components/neuro/assessment-brain";
+
 const OPTIONS = [
   { label: "Never", score: 0 },
   { label: "Sometimes", score: 1 },
