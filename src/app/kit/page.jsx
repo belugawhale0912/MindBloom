@@ -178,15 +178,24 @@ export default function CalmKit() {
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-1000 ease-out pb-32 min-h-screen">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="sticky top-0 z-30 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-border/50 pb-6 mb-12 bg-background/95 backdrop-blur-md pt-6 -mt-6 -mx-4 px-4 md:-mx-8 md:px-8">
         <div className="space-y-1">
           <h2 className="text-4xl font-heading font-black text-foreground tracking-tight">
             My Calm Kit <span className="text-primary italic">🧺</span>
           </h2>
           <p className="text-muted-foreground text-base max-w-xl">
-            Your confort zone with your favorite videos, photos, and quotes.
+            Your comfort zone with your favorite videos, photos, and quotes.
           </p>
         </div>
+        {!isAddingItem && (
+          <Button 
+            onClick={() => setIsAddingItem(true)}
+            className="rounded-full h-14 px-8 shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all group shrink-0 font-bold text-lg"
+          >
+            <Plus className="h-5 w-5 mr-2 transition-transform group-hover:rotate-90" />
+            Add New Item
+          </Button>
+        )}
       </div>
 
 
@@ -489,16 +498,6 @@ export default function CalmKit() {
           onClose={() => setViewerItem(null)}
           onNavigate={setViewerItem}
         />
-      )}
-
-      {/* Floating Add Button */}
-      {!isAddingItem && (
-        <Button
-          className="fixed bottom-10 right-10 rounded-full h-20 w-20 shadow-[0_20px_50px_rgba(0,0,0,0.2)] hover:shadow-primary/30 hover:-translate-y-2 transition-all group z-50 p-0"
-          onClick={() => setIsAddingItem(true)}
-        >
-          <Plus className="h-10 w-10 transition-transform group-hover:rotate-90 duration-500" />
-        </Button>
       )}
     </div>
   );
