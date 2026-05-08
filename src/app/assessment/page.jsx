@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import AssessmentBrain from "@/components/neuro/assessment-brain";
 import {
   LineChart,
   Line,
@@ -373,6 +374,55 @@ export default function Assessment() {
 
       {view === "list" && (
         <div className="space-y-10">
+          {/* Latest Status 3D Overview Card */}
+          {historyData.length > 0 && (
+            <Card className="border-0 shadow-xl ring-1 ring-border/50 overflow-hidden bg-gradient-to-br from-slate-950 to-slate-900 animate-in fade-in zoom-in-95 duration-1000">
+              <div className="grid md:grid-cols-2 items-center">
+                <div className="p-8 space-y-6">
+                  <div className="space-y-2">
+                    <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5 uppercase tracking-widest text-[10px] font-bold">
+                      Latest Neural Profile
+                    </Badge>
+                    <h3 className="text-3xl font-heading font-black text-white">Your Current State</h3>
+                    <p className="text-white/60 text-sm leading-relaxed max-w-sm">
+                      Based on your last assessment on <span className="text-white font-medium">{historyData[0].date}</span>.
+                      This visualization reflects your current psychological energy patterns.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-6">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Severity</p>
+                      <p className={cn(
+                        "text-xl font-bold",
+                        historyData[0].severity === "Low" ? "text-emerald-400" :
+                          historyData[0].severity === "Moderate" ? "text-amber-400" : "text-rose-400"
+                      )}>
+                        {historyData[0].severity}
+                      </p>
+                    </div>
+                    <div className="w-px h-10 bg-white/10" />
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Score</p>
+                      <p className="text-xl font-bold text-white font-mono">{historyData[0].score} <span className="text-sm text-white/30">/ 30</span></p>
+                    </div>
+                  </div>
+
+                  <Button
+                    className="rounded-full bg-white text-black hover:bg-white/90 font-bold px-8 h-12"
+                    onClick={() => startQuiz(historyData[0].type)}
+                  >
+                    Retake {historyData[0].type}
+                  </Button>
+                </div>
+
+                <div className="relative h-[350px] md:h-[450px] w-full">
+                  <AssessmentBrain severity={historyData[0].severity} />
+                </div>
+              </div>
+            </Card>
+          )}
+
           <div className="grid gap-4 md:grid-cols-3">
             {listEntries.map((type) => {
               const meta = ASSESSMENTS[type];
@@ -621,36 +671,20 @@ export default function Assessment() {
             )}
           />
 
-          {/* Emotional Visualization Wave */}
-          <div className="w-full h-24 relative overflow-hidden bg-secondary/10">
-            <svg viewBox="0 0 1440 320" className={cn(
-              "absolute bottom-0 w-full h-full animate-wave opacity-50",
-              resultInsights.severity === "Low" ? "text-emerald-500/20" :
-                resultInsights.severity === "Moderate" ? "text-amber-500/20" : "text-rose-500/20"
-            )}>
-              <path
-                fill="currentColor"
-                d={resultInsights.severity === "Low"
-                  ? "M0,160L48,176C96,192,192,224,288,224C384,224,480,192,576,165.3C672,139,768,117,864,128C960,139,1056,181,1152,197.3C1248,213,1344,203,1392,197.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-                  : resultInsights.severity === "Moderate"
-                    ? "M0,160L48,144C96,128,192,96,288,106.7C384,117,480,171,576,186.7C672,203,768,181,864,160C960,139,1056,117,1152,122.7C1248,128,1344,160,1392,176L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-                    : "M0,160L48,160C96,160,192,160,288,186.7C384,213,480,267,576,250.7C672,235,768,149,864,117.3C960,85,1056,107,1152,128C1248,149,1344,171,1392,181.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-                }
-              ></path>
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
+          {/* Result Insights Header */}
+          <CardHeader className="text-center pb-2 pt-8">
+            <div className="flex justify-center mb-6">
               <div className={cn(
-                "px-6 py-2 rounded-full backdrop-blur-md border shadow-lg",
-                resultInsights.severity === "Low" ? "bg-emerald-50/50 border-emerald-200 text-emerald-700" :
-                  resultInsights.severity === "Moderate" ? "bg-amber-50/50 border-amber-200 text-amber-700" :
-                    "bg-rose-50/50 border-rose-200 text-rose-700"
+                "p-4 rounded-full",
+                resultInsights.severity === "Low" && "bg-emerald-500/10 text-emerald-500",
+                resultInsights.severity === "Moderate" && "bg-amber-500/10 text-amber-500",
+                resultInsights.severity === "High" && "bg-rose-500/10 text-rose-500",
               )}>
-                <span className="text-sm font-bold uppercase tracking-widest">{resultInsights.severity} Intensity</span>
+                {resultInsights.severity === "Low" ? <Sparkles className="h-10 w-10" /> :
+                  resultInsights.severity === "Moderate" ? <Brain className="h-10 w-10" /> :
+                    <AlertCircle className="h-10 w-10" />}
               </div>
             </div>
-          </div>
-
-          <CardHeader className="text-center pb-2 pt-8">
             <CardTitle className="text-xl md:text-2xl font-heading leading-snug px-2">
               {resultInsights.headline}
             </CardTitle>

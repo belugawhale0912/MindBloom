@@ -6,14 +6,14 @@ export async function POST(request) {
     const formData = await request.formData();
     const file = formData.get('file');
     const type = formData.get('type'); // 'video' or 'photo'
-    
+
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
     // Determine bucket name based on type
     const bucketName = type === 'video' ? 'video' : 'image';
-    
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
