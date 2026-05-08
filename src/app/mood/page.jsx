@@ -68,14 +68,6 @@ const MOOD_COLORS = {
 
 export default function MoodTracker() {
   const [moodValue, setMoodValue] = useState([5]);
-  const [moodImages, setMoodImages] = useState({
-    '0-2': [],
-    '3-5': [],
-    '6-7': [],
-    '8-10': []
-  });
-  const [currentMoodPhoto, setCurrentMoodPhoto] = useState(null);
-  const [currentTier, setCurrentTier] = useState(null);
 
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categoryImpacts, setCategoryImpacts] = useState({});
@@ -230,35 +222,7 @@ export default function MoodTracker() {
       .then((res) => res.json())
       .then((data) => setPastEntries(data))
       .catch((err) => console.error("Failed to load mood entries:", err));
-
-    fetch("/api/mood-images")
-      .then((res) => res.json())
-      .then((data) => {
-        setMoodImages(data);
-      })
-      .catch((err) => console.error("Failed to load mood images:", err));
   }, []);
-
-  const getTierForMood = (val) => {
-    if (val <= 2) return '0-2';
-    if (val <= 5) return '3-5';
-    if (val <= 7) return '6-7';
-    return '8-10';
-  };
-
-  useEffect(() => {
-    const tier = getTierForMood(moodValue[0]);
-    if (tier !== currentTier) {
-      setCurrentTier(tier);
-      const availableImages = moodImages[tier];
-      if (availableImages && availableImages.length > 0) {
-        const randomImg = availableImages[Math.floor(Math.random() * availableImages.length)];
-        setCurrentMoodPhoto(`/mood/${tier}/${randomImg}`);
-      } else {
-        setCurrentMoodPhoto(null);
-      }
-    }
-  }, [moodValue, currentTier, moodImages]);
 
   const handleSave = async (overridePin = null) => {
     if (isSaving) return;
@@ -413,40 +377,31 @@ export default function MoodTracker() {
 
           <div className="space-y-6">
             <div className="flex flex-col items-center justify-center py-10 bg-transparent transition-all duration-700 relative overflow-hidden">
-              {/* Soft Ambient Glow Background */}
-              {currentMoodPhoto ? (
-                <div
-                  className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-700 z-0"
-                  style={{ backgroundImage: `url(${currentMoodPhoto})` }}
-                />
-              ) : (
-                <div
-                  className={cn(
-                    "absolute inset-0 w-full h-full blur-[80px] opacity-40 transition-colors duration-700 rounded-full scale-110",
-                    MOOD_COLORS[moodValue[0]]
-                  )}
-                />
-              )}
+              {/* Soft ambient glow background */}
+              <div
+                className={cn(
+                  "absolute inset-0 w-full h-full blur-[80px] opacity-40 transition-colors duration-700 rounded-full scale-110",
+                  MOOD_COLORS[moodValue[0]]
+                )}
+              />
 
-              {/* Maintain identical layout size by keeping the container even if the emoji is hidden */}
+              {/* Emoji-only mood visualization */}
               <div className="relative z-10 w-40 h-40 md:w-48 md:h-48 flex items-center justify-center mb-4 text-8xl md:text-9xl animate-breathing drop-shadow-2xl">
-                {!currentMoodPhoto && MOOD_EMOJIS[moodValue[0]]}
+                {MOOD_EMOJIS[moodValue[0]]}
               </div>
 
               <div className="relative z-10 text-center space-y-1">
                 <p className={cn(
-                  "font-heading font-bold text-5xl tracking-tighter drop-shadow-md",
-                  currentMoodPhoto ? "text-white" : "text-foreground"
+                  "font-heading font-bold text-5xl tracking-tighter drop-shadow-md text-foreground"
                 )}>
                   {moodValue[0]}
                 </p>
                 <p className={cn(
                   "text-xl font-semibold tracking-wide transition-all duration-500 drop-shadow-md",
-                  currentMoodPhoto ? "text-white/95" : 
-                    moodValue[0] <= 2 ? "text-rose-500" :
-                      moodValue[0] <= 4 ? "text-orange-500" :
-                        moodValue[0] <= 5 ? "text-blue-500" :
-                          moodValue[0] <= 7 ? "text-emerald-500" : "text-purple-500"
+                  moodValue[0] <= 2 ? "text-rose-500" :
+                    moodValue[0] <= 4 ? "text-orange-500" :
+                      moodValue[0] <= 5 ? "text-blue-500" :
+                        moodValue[0] <= 7 ? "text-emerald-500" : "text-purple-500"
                 )}>
                   {MOOD_LABELS[moodValue[0]]}
                 </p>
