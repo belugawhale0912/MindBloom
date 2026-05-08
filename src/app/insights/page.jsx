@@ -123,9 +123,9 @@ export default function Insights() {
 
       {/* Streak Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-[#FFF9C4]/30 to-transparent">
+        <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-[#FFF9C4]/30 dark:from-amber-900/20 to-transparent">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-orange-100 text-orange-500 rounded-full shrink-0">
+            <div className="p-3 bg-orange-100 dark:bg-orange-950/50 text-orange-500 rounded-full shrink-0">
               <Flame className="h-5 w-5" />
             </div>
             <div>
@@ -135,9 +135,9 @@ export default function Insights() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-blue-50 to-transparent">
+        <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-blue-50 dark:from-blue-900/20 to-transparent">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-blue-100 text-blue-500 rounded-full shrink-0">
+            <div className="p-3 bg-blue-100 dark:bg-blue-950/50 text-blue-500 rounded-full shrink-0">
               <BookOpen className="h-5 w-5" />
             </div>
             <div>
@@ -149,9 +149,9 @@ export default function Insights() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-indigo-50 to-transparent">
+        <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-indigo-50 dark:from-indigo-900/20 to-transparent">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-indigo-100 text-indigo-500 rounded-full shrink-0">
+            <div className="p-3 bg-indigo-100 dark:bg-indigo-950/50 text-indigo-500 rounded-full shrink-0">
               <Music className="h-5 w-5" />
             </div>
             <div>
@@ -222,7 +222,7 @@ export default function Insights() {
 
       {/* Assessment Trend */}
       {assessmentChartData.length > 0 && (
-        <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-indigo-50/30">
+        <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-indigo-50/30 dark:bg-indigo-900/10">
           <CardHeader className="pb-2 flex flex-row items-center gap-2">
             <ClipboardCheck className="h-5 w-5 text-indigo-500" />
             <CardTitle className="text-lg">Assessment Score Trend</CardTitle>
@@ -327,7 +327,7 @@ export default function Insights() {
 
         <div className="space-y-4">
           {/* Pattern Insights */}
-          <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-[#FFF9C4]/40">
+          <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-[#FFF9C4]/40 dark:bg-amber-900/10">
             <CardContent className="p-5 space-y-4">
               <h3 className="font-semibold text-sm flex items-center gap-2">
                 <span className="text-xl">📊</span> Pattern Insights
@@ -340,7 +340,7 @@ export default function Insights() {
                   </p>
                 ) : (
                   <>
-                    <div className="bg-white/60 p-3 rounded-xl">
+                    <div className="bg-white/60 dark:bg-card/40 p-3 rounded-xl">
                       <p className="text-sm font-medium text-foreground">
                         Consistency is key 🌟
                       </p>
@@ -348,7 +348,7 @@ export default function Insights() {
                         You've been checking in regularly. This helps the AI understand your patterns better.
                       </p>
                     </div>
-                    <div className="bg-white/60 p-3 rounded-xl">
+                    <div className="bg-white/60 dark:bg-card/40 p-3 rounded-xl">
                       <p className="text-sm font-medium text-foreground">
                         Morning vs evening
                       </p>

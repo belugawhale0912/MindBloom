@@ -189,7 +189,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Recent Journal or Quote */}
           {recentJournal ? (
-            <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-blue-50 to-transparent">
+            <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-blue-50 dark:from-blue-900/20 to-transparent">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold flex items-center justify-between">
                   <span className="flex items-center gap-2">
@@ -212,7 +212,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-secondary/30 to-transparent flex flex-col justify-center p-6">
+            <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-secondary/30 dark:from-secondary/10 to-transparent flex flex-col justify-center p-6">
               <CardContent className="p-0 text-center space-y-4">
                 <p className="text-lg font-medium text-foreground leading-relaxed italic">
                   "You don't have to control your thoughts. You just have to stop
@@ -288,14 +288,14 @@ export default function Dashboard() {
           <h3 className="text-lg font-bold tracking-tight px-1">Quick Shortcuts</h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { href: "/companion", icon: MessageCircleHeart, title: "Companion", desc: "Share thoughts", color: "text-rose-500", bg: "bg-rose-50" },
-              { href: "/tools", icon: Flower2, title: "Tools", desc: "Regulate system", color: "text-emerald-500", bg: "bg-emerald-50" },
-              { href: "/zen", icon: Sparkles, title: "Zen", desc: "Find calm", color: "text-purple-500", bg: "bg-purple-50" },
-              { href: "/mood", icon: Smile, title: "Mood", desc: "Track patterns", color: "text-amber-500", bg: "bg-amber-50" },
-              { href: "/assessment", icon: ClipboardCheck, title: "Assessment", desc: "Check in", color: "text-indigo-500", bg: "bg-indigo-50" },
-              { href: "/kit", icon: Archive, title: "Calm Kit", desc: "Your sanctuary", color: "text-teal-500", bg: "bg-teal-50" },
-              { href: "/insights", icon: LineChart, title: "Insights", desc: "View progress", color: "text-blue-500", bg: "bg-blue-50" },
-              { href: "/profile", icon: User, title: "Profile", desc: "Journal & Data", color: "text-slate-500", bg: "bg-slate-50" },
+              { href: "/companion", icon: MessageCircleHeart, title: "Companion", desc: "Share thoughts", color: "text-rose-500", bg: "bg-rose-50 dark:bg-rose-950/30" },
+              { href: "/tools", icon: Flower2, title: "Tools", desc: "Regulate system", color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
+              { href: "/zen", icon: Sparkles, title: "Zen", desc: "Find calm", color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-950/30" },
+              { href: "/mood", icon: Smile, title: "Mood", desc: "Track patterns", color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-950/30" },
+              { href: "/assessment", icon: ClipboardCheck, title: "Assessment", desc: "Check in", color: "text-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-950/30" },
+              { href: "/kit", icon: Archive, title: "Calm Kit", desc: "Your sanctuary", color: "text-teal-500", bg: "bg-teal-50 dark:bg-teal-950/30" },
+              { href: "/insights", icon: LineChart, title: "Insights", desc: "View progress", color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950/30" },
+              { href: "/profile", icon: User, title: "Profile", desc: "Journal & Data", color: "text-slate-500", bg: "bg-slate-50 dark:bg-slate-900/30" },
             ].map((item) => (
               <Link key={item.href} href={item.href} className="group">
                 <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-card hover:ring-primary/40 transition-all duration-300 h-full">
@@ -315,10 +315,10 @@ export default function Dashboard() {
         </section>
 
         {latestAssessment && (
-          <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-indigo-50/50">
+          <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-indigo-50/50 dark:bg-indigo-900/10">
             <CardContent className="p-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="bg-indigo-100 text-indigo-500 p-2.5 rounded-xl shadow-sm border border-indigo-200">
+                <div className="bg-indigo-100 dark:bg-indigo-950/50 text-indigo-500 p-2.5 rounded-xl shadow-sm border border-indigo-200 dark:border-indigo-900">
                   <ClipboardCheck className="h-4 w-4" />
                 </div>
                 <div>

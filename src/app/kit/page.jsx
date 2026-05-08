@@ -296,11 +296,11 @@ export default function CalmKit() {
 
         {/* Corkboard */}
         <div
-          className="relative rounded-[2.5rem] p-6 md:p-8"
+          className="relative rounded-[2.5rem] p-6 md:p-8 transition-all duration-500"
           style={{
-            background: "linear-gradient(135deg, hsl(var(--muted)/0.6) 0%, hsl(var(--card)/0.8) 100%)",
-            boxShadow: "inset 0 2px 12px rgba(0,0,0,0.08), 0 4px 24px rgba(0,0,0,0.06)",
-            border: "1px solid hsl(var(--border)/0.4)",
+            background: "linear-gradient(135deg, hsl(var(--muted)/0.4) 0%, hsl(var(--card)/0.6) 100%)",
+            boxShadow: "inset 0 2px 12px rgba(0,0,0,0.1), 0 4px 24px rgba(0,0,0,0.1)",
+            border: "1px solid hsl(var(--border)/0.3)",
           }}
         >
           {notes.length === 0 && (
@@ -313,14 +313,14 @@ export default function CalmKit() {
             {notes.map((note, idx) => {
               const pinColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
               const noteColors = [
-                'hsl(48 96% 96%)',
-                'hsl(210 100% 97%)',
-                'hsl(142 76% 96%)',
-                'hsl(280 100% 97%)',
-                'hsl(0 86% 97%)',
+                'bg-[#FFF9C4] dark:bg-amber-900/40',
+                'bg-[#E3F2FD] dark:bg-blue-900/40',
+                'bg-[#E8F5E9] dark:bg-emerald-900/40',
+                'bg-[#F3E5F5] dark:bg-purple-900/40',
+                'bg-[#FFEBEE] dark:bg-rose-900/40',
               ];
               const pin = pinColors[idx % pinColors.length];
-              const bg = noteColors[idx % noteColors.length];
+              const bgClass = noteColors[idx % noteColors.length];
               const rotate = (idx % 2 === 0 ? -1 : 1) * (1 + (idx % 3) * 0.5);
               return (
                 <div
@@ -340,8 +340,7 @@ export default function CalmKit() {
                   </div>
 
                   <div
-                    className="rounded-2xl p-6 pt-8 pb-10 shadow-md"
-                    style={{ backgroundColor: bg }}
+                    className={cn("rounded-2xl p-6 pt-8 pb-10 shadow-md transition-colors duration-500", bgClass)}
                   >
                     <Button
                       variant="ghost"
@@ -351,10 +350,10 @@ export default function CalmKit() {
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
-                    <p className="font-medium text-base text-zinc-800 italic leading-relaxed">
+                    <p className="font-medium text-base text-zinc-800 dark:text-zinc-100 italic leading-relaxed">
                       &ldquo;{note.content}&rdquo;
                     </p>
-                    <div className="mt-4 flex items-center gap-1.5 text-zinc-400 text-[10px] font-bold uppercase tracking-widest">
+                    <div className="mt-4 flex items-center gap-1.5 text-zinc-400 dark:text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
                       <Clock className="w-3 h-3" />
                       {note.date}
                     </div>
@@ -371,7 +370,7 @@ export default function CalmKit() {
             value={newNoteText}
             onChange={(e) => setNewNoteText(e.target.value)}
             disabled={isSaving}
-            className="min-h-[160px] text-lg resize-none p-8 pb-20 bg-card rounded-[2.5rem] border-border/50 focus-visible:ring-primary/20 shadow-inner group-hover:border-primary/20 transition-all duration-500"
+            className="min-h-[160px] text-lg resize-none p-8 pb-20 bg-card/50 dark:bg-card/20 backdrop-blur-sm rounded-[2.5rem] border-border/50 focus-visible:ring-primary/20 shadow-inner group-hover:border-primary/20 transition-all duration-500"
           />
           <div className="absolute bottom-6 right-8">
             <Button
