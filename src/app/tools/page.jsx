@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -23,7 +24,10 @@ import {
   Bookmark,
 } from "lucide-react";
 
-export default function GuidedTools() {
+function GuidedToolsContent() {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab");
+  
   const toolTabs = [
     { value: "breathing", label: "Breathing" },
     { value: "meditation", label: "Meditation" },
@@ -31,6 +35,12 @@ export default function GuidedTools() {
     { value: "grounding", label: "Grounding" },
   ];
   const [activeToolTab, setActiveToolTab] = useState("breathing");
+
+  useEffect(() => {
+    if (tab && toolTabs.some(t => t.value === tab)) {
+      setActiveToolTab(tab);
+    }
+  }, [tab, toolTabs]);
   const [isBreathing, setIsBreathing] = useState(false);
   const [breathingPhase, setBreathingPhase] = useState("Ready");
   const [breathingMode, setBreathingMode] = useState("Box Breathing");
@@ -584,5 +594,13 @@ export default function GuidedTools() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function GuidedTools() {
+  return (
+    <Suspense fallback={<div>Loading tools...</div>}>
+      <GuidedToolsContent />
+    </Suspense>
   );
 }

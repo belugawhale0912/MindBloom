@@ -68,6 +68,15 @@ const MOOD_COLORS = {
 
 export default function MoodTracker() {
   const [moodValue, setMoodValue] = useState([5]);
+  const [moodImages, setMoodImages] = useState({
+    '0-2': [],
+    '3-5': [],
+    '6-7': [],
+    '8-10': []
+  });
+  const [currentMoodPhoto, setCurrentMoodPhoto] = useState(null);
+  const [currentTier, setCurrentTier] = useState(null);
+  const [isInteracted, setIsInteracted] = useState(false);
 
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categoryImpacts, setCategoryImpacts] = useState({});
@@ -222,7 +231,35 @@ export default function MoodTracker() {
       .then((res) => res.json())
       .then((data) => setPastEntries(data))
       .catch((err) => console.error("Failed to load mood entries:", err));
+
+    fetch("/api/mood-images")
+      .then((res) => res.json())
+      .then((data) => setMoodImages(data))
+      .catch((err) => console.error("Failed to load mood images:", err));
   }, []);
+
+  const getTierForMood = (val) => {
+    if (val <= 2) return '0-2';
+    if (val <= 5) return '3-5';
+    if (val <= 7) return '6-7';
+    return '8-10';
+  };
+
+  useEffect(() => {
+    if (!isInteracted) return;
+
+    const tier = getTierForMood(moodValue[0]);
+    if (tier !== currentTier) {
+      setCurrentTier(tier);
+      const availableImages = moodImages[tier];
+      if (availableImages && availableImages.length > 0) {
+        const randomImg = availableImages[Math.floor(Math.random() * availableImages.length)];
+        setCurrentMoodPhoto(`/mood/${tier}/${randomImg}`);
+      } else {
+        setCurrentMoodPhoto(null);
+      }
+    }
+  }, [moodValue, currentTier, moodImages, isInteracted]);
 
   const handleSave = async (overridePin = null) => {
     if (isSaving) return;
@@ -378,16 +415,23 @@ export default function MoodTracker() {
           <div className="space-y-6">
             <div className="flex flex-col items-center justify-center py-10 bg-transparent transition-all duration-700 relative overflow-hidden">
               {/* Soft ambient glow background */}
-              <div
-                className={cn(
-                  "absolute inset-0 w-full h-full blur-[80px] opacity-40 transition-colors duration-700 rounded-full scale-110",
-                  MOOD_COLORS[moodValue[0]]
-                )}
-              />
+              {currentMoodPhoto ? (
+                <div
+                  className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-700 z-0"
+                  style={{ backgroundImage: `url(${currentMoodPhoto})` }}
+                />
+              ) : (
+                <div
+                  className={cn(
+                    "absolute inset-0 w-full h-full blur-[80px] opacity-40 transition-colors duration-700 rounded-full scale-110",
+                    MOOD_COLORS[moodValue[0]]
+                  )}
+                />
+              )}
 
-              {/* Emoji-only mood visualization */}
+              {/* Maintain identical layout size by keeping the container even if the emoji is hidden */}
               <div className="relative z-10 w-40 h-40 md:w-48 md:h-48 flex items-center justify-center mb-4 text-8xl md:text-9xl animate-breathing drop-shadow-2xl">
-                {MOOD_EMOJIS[moodValue[0]]}
+                {!currentMoodPhoto && MOOD_EMOJIS[moodValue[0]]}
               </div>
 
               <div className="relative z-10 text-center space-y-1">
@@ -411,7 +455,10 @@ export default function MoodTracker() {
             <div className="px-6 max-w-xl mx-auto w-full">
               <Slider
                 value={moodValue}
-                onValueChange={(val) => setMoodValue(val)}
+                onValueChange={(val) => {
+                  setMoodValue(val);
+                  setIsInteracted(true);
+                }}
                 max={10}
                 min={0}
                 step={1}
@@ -509,7 +556,7 @@ export default function MoodTracker() {
                       checked={isSecureMode}
                       onCheckedChange={setIsSecureMode}
                     />
-                    <label htmlFor="secure-mode" className="text-xs cursor-pointer font-medium text-muted-foreground">Secure Brain Dump mode</label>
+                    <label htmlFor="secure-mode" className="text-xs cursor-pointer font-medium text-muted-foreground">Hidden Space</label>
                   </div>
                 </div>
 

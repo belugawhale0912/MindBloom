@@ -197,7 +197,7 @@ export default function Dashboard() {
                     Latest Journal
                   </span>
                   <Link
-                    href="/profile"
+                    href="/tools?tab=journaling"
                     className="text-xs text-blue-500 font-bold hover:underline uppercase tracking-wider"
                   >
                     View All
