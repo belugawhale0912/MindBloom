@@ -491,9 +491,9 @@ function GuidedToolsContent() {
 
         {/* JOURNALING TAB */}
         <TabsContent value="journaling" className="space-y-4">
-          <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-[#Fdfbf7]">
+          <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-[#Fdfbf7] dark:bg-amber-950/20">
             <CardHeader>
-              <CardTitle className="text-lg text-[#b8860b] flex items-center gap-2">
+              <CardTitle className="text-lg text-[#b8860b] dark:text-amber-500 flex items-center gap-2">
                 <Sparkles className="h-5 w-5" /> Daily Prompt
               </CardTitle>
               <CardDescription className="text-base font-medium text-foreground">
@@ -506,14 +506,14 @@ function GuidedToolsContent() {
                 placeholder="Write your thoughts here..."
                 value={journalContent}
                 onChange={(e) => setJournalContent(e.target.value)}
-                className="min-h-[150px] resize-none bg-white rounded-2xl focus-visible:ring-[#b8860b]/30 border-border/50 text-base"
+                className="min-h-[150px] resize-none bg-white dark:bg-background/40 rounded-2xl focus-visible:ring-[#b8860b]/30 border-border/50 text-base"
                 disabled={isSavingJournal}
               />
 
               <Button
                 onClick={handleSaveJournal}
                 disabled={!journalContent.trim() || isSavingJournal}
-                className="w-full md:w-auto rounded-full bg-[#b8860b] hover:bg-[#b8860b]/90 text-white"
+                className="w-full md:w-auto rounded-full bg-[#b8860b] hover:bg-[#b8860b]/90 dark:bg-amber-600 dark:hover:bg-amber-700 text-white"
               >
                 {isSavingJournal ? "Saving..." : "Save to Journal"}
               </Button>
@@ -540,7 +540,7 @@ function GuidedToolsContent() {
                   </button>
                 </div>
               </div>
-              <Badge variant="secondary" className="bg-[#b8860b]/10 text-[#b8860b] border border-[#b8860b]/20">
+              <Badge variant="secondary" className="bg-[#b8860b]/10 dark:bg-amber-900/30 text-[#b8860b] dark:text-amber-500 border border-[#b8860b]/20 dark:border-amber-900/50">
                 {journalStreak} day streak
               </Badge>
             </div>

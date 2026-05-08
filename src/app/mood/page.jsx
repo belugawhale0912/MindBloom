@@ -373,30 +373,10 @@ export default function MoodTracker() {
   const allImpactsAssigned = selectedCategories.length > 0 && selectedCategories.every(cat => categoryImpacts[cat]);
 
   return (
-    <div className="relative min-h-screen space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 ease-out pb-20 overflow-x-hidden bg-white">
-      {/* Pure White Background for the entire viewport */}
-      <div className="fixed inset-0 bg-white -z-10" />
-      
-      <style dangerouslySetInnerHTML={{ __html: `
-        body, main, header, aside, .sticky, [data-slot="card"] {
-          background-color: #ffffff !important;
-          background-image: none !important;
-          border: none !important;
-          box-shadow: none !important;
-          ring: none !important;
-          backdrop-filter: none !important;
-        }
-        .border-b, .border-t, .border {
-          border: none !important;
-        }
-        * {
-          box-shadow: none !important;
-          ring: 0 !important;
-        }
-      `}} />
+    <div className="relative min-h-screen space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 ease-out pb-20 overflow-x-hidden bg-background">
 
 
-      <Card className="relative z-10 border-0 shadow-none ring-0 bg-white overflow-hidden rounded-[2.5rem]">
+      <Card className="relative z-10 border-0 shadow-xl shadow-foreground/5 ring-1 ring-border/50 bg-card/80 backdrop-blur-xl overflow-hidden rounded-[2.5rem]">
 
         <CardHeader>
           <CardTitle>Daily Mood Check-in</CardTitle>
@@ -417,7 +397,7 @@ export default function MoodTracker() {
 
               <div className="relative z-10 text-center space-y-1">
                 <p className={cn(
-                  "font-heading font-bold text-5xl tracking-tighter text-foreground"
+                  "font-heading font-bold text-6xl tracking-tighter text-foreground"
                 )}>
                   {moodValue[0]}
                 </p>
@@ -471,8 +451,8 @@ export default function MoodTracker() {
                   className={cn(
                     "cursor-pointer px-6 py-4 transition-all duration-300 rounded-2xl border flex items-center gap-3 group backdrop-blur-md",
                     selectedCategories.includes(cat.id)
-                      ? "bg-primary/90 text-primary-foreground border-primary shadow-lg shadow-primary/20 scale-105"
-                      : "bg-card/40 hover:bg-secondary/40 border-border/50 text-foreground hover:border-primary/30 shadow-sm"
+                      ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20 scale-105"
+                      : "bg-background/40 hover:bg-secondary/40 border-border/50 text-foreground hover:border-primary/30 shadow-sm"
                   )}
                   onClick={() => toggleCategory(cat.id)}
                 >
@@ -500,7 +480,7 @@ export default function MoodTracker() {
                       <Button
                         size="sm"
                         variant={categoryImpacts[cat] === "Negative" ? "destructive" : "outline"}
-                        className={`rounded-full ${categoryImpacts[cat] === "Negative" ? "opacity-100 ring-2 ring-destructive ring-offset-2 ring-offset-background" : "opacity-70 hover:opacity-100 dark:text-red-400 dark:hover:text-red-300"}`}
+                        className={`rounded-full ${categoryImpacts[cat] === "Negative" ? "opacity-100 ring-2 ring-destructive ring-offset-2 ring-offset-background" : "opacity-70 hover:opacity-100 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/30"}`}
                         onClick={() => setImpact(cat, "Negative")}
                       >
                         Bothering me
@@ -508,7 +488,7 @@ export default function MoodTracker() {
                       <Button
                         size="sm"
                         variant={categoryImpacts[cat] === "Positive" ? "default" : "outline"}
-                        className={`rounded-full ${categoryImpacts[cat] === "Positive" ? "opacity-100 ring-2 ring-primary ring-offset-2 ring-offset-background bg-green-600 hover:bg-green-700 text-white" : "opacity-70 hover:opacity-100 dark:text-green-400 dark:hover:text-green-300"}`}
+                        className={`rounded-full ${categoryImpacts[cat] === "Positive" ? "opacity-100 ring-2 ring-primary ring-offset-2 ring-offset-background bg-emerald-600 hover:bg-emerald-700 text-white" : "opacity-70 hover:opacity-100 dark:border-emerald-900/50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"}`}
                         onClick={() => setImpact(cat, "Positive")}
                       >
                         Making me happy
@@ -643,7 +623,7 @@ export default function MoodTracker() {
           {pastEntries.map((entry) => (
             <Card
               key={entry.id || entry.timestamp}
-              className="relative z-10 border-0 shadow-none ring-0 bg-white transition-all rounded-2xl overflow-hidden"
+              className="relative z-10 border-0 shadow-lg shadow-foreground/5 ring-1 ring-border/50 bg-card/60 backdrop-blur-md transition-all rounded-2xl overflow-hidden"
             >
               <CardContent className="p-4 flex items-start gap-4">
                 <div className={cn(
@@ -725,7 +705,7 @@ export default function MoodTracker() {
       </div>
 
       <Dialog open={isKeypadOpen} onOpenChange={setIsKeypadOpen}>
-        <DialogContent className="sm:max-w-xs p-6 bg-white rounded-3xl" showCloseButton={false}>
+        <DialogContent className="sm:max-w-xs p-6 bg-card/95 backdrop-blur-2xl rounded-3xl border-border/50 shadow-2xl" showCloseButton={false}>
           <div className="flex justify-between items-center mb-6">
             <DialogTitle className="text-xl font-heading font-semibold flex items-center gap-2">
               {keypadContext === 'auto' ? <Shield className="w-5 h-5 text-primary" /> : <Lock className="w-5 h-5 text-primary" />}
