@@ -91,7 +91,7 @@ export default function MoodTracker() {
     try {
       const storedSecureMode = localStorage.getItem('mood_isSecureMode');
       if (storedSecureMode !== null) setIsSecureMode(storedSecureMode === 'true');
-      
+
       const storedPinMode = localStorage.getItem('mood_pinMode');
       if (storedPinMode) setPinMode(storedPinMode);
 
@@ -442,7 +442,7 @@ export default function MoodTracker() {
                 </p>
                 <p className={cn(
                   "text-xl font-semibold tracking-wide transition-all duration-500 drop-shadow-md",
-                  currentMoodPhoto ? "text-white/95" : 
+                  currentMoodPhoto ? "text-white/95" :
                     moodValue[0] <= 2 ? "text-rose-500" :
                       moodValue[0] <= 4 ? "text-orange-500" :
                         moodValue[0] <= 5 ? "text-blue-500" :
