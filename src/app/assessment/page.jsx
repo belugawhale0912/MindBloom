@@ -33,6 +33,8 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
+import AssessmentBrain from "@/components/neuro/assessment-brain";
+
 const OPTIONS = [
   { label: "Never", score: 0 },
   { label: "Sometimes", score: 1 },
@@ -373,6 +375,55 @@ export default function Assessment() {
 
       {view === "list" && (
         <div className="space-y-10">
+          {/* Latest Status 3D Overview Card */}
+          {historyData.length > 0 && (
+            <Card className="border-0 shadow-xl ring-1 ring-border/50 overflow-hidden bg-gradient-to-br from-slate-950 to-slate-900 animate-in fade-in zoom-in-95 duration-1000">
+              <div className="grid md:grid-cols-2 items-center">
+                <div className="p-8 space-y-6">
+                  <div className="space-y-2">
+                    <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5 uppercase tracking-widest text-[10px] font-bold">
+                      Latest Neural Profile
+                    </Badge>
+                    <h3 className="text-3xl font-heading font-black text-white">Your Current State</h3>
+                    <p className="text-white/60 text-sm leading-relaxed max-w-sm">
+                      Based on your last assessment on <span className="text-white font-medium">{historyData[0].date}</span>.
+                      This visualization reflects your current psychological energy patterns.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-6">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Severity</p>
+                      <p className={cn(
+                        "text-xl font-bold",
+                        historyData[0].severity === "Low" ? "text-emerald-400" :
+                          historyData[0].severity === "Moderate" ? "text-amber-400" : "text-rose-400"
+                      )}>
+                        {historyData[0].severity}
+                      </p>
+                    </div>
+                    <div className="w-px h-10 bg-white/10" />
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Score</p>
+                      <p className="text-xl font-bold text-white font-mono">{historyData[0].score} <span className="text-sm text-white/30">/ 30</span></p>
+                    </div>
+                  </div>
+
+                  <Button
+                    className="rounded-full bg-white text-black hover:bg-white/90 font-bold px-8 h-12"
+                    onClick={() => startQuiz(historyData[0].type)}
+                  >
+                    Retake {historyData[0].type}
+                  </Button>
+                </div>
+
+                <div className="relative h-[350px] md:h-[450px] w-full">
+                  <AssessmentBrain severity={historyData[0].severity} />
+                </div>
+              </div>
+            </Card>
+          )}
+
           <div className="grid gap-4 md:grid-cols-3">
             {listEntries.map((type) => {
               const meta = ASSESSMENTS[type];

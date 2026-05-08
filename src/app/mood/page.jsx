@@ -373,23 +373,31 @@ export default function MoodTracker() {
   const allImpactsAssigned = selectedCategories.length > 0 && selectedCategories.every(cat => categoryImpacts[cat]);
 
   return (
-    <div className="relative min-h-screen space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 ease-out pb-20 overflow-x-hidden bg-background">
-      {/* Refined Ambient Background */}
-      <div className="fixed inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden">
-        {/* Central Mood Aura - More contained */}
-        <div 
-          className={cn(
-            "w-[120%] h-[120%] max-w-4xl max-h-[1000px] blur-[140px] opacity-[0.12] rounded-full transition-all duration-[1500ms] ease-in-out bg-gradient-to-tr",
-            MOOD_COLORS[moodValue[0]]
-          )}
-        />
-        
-        {/* Subtle Noise Texture Overlay */}
-        <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
-      </div>
+    <div className="relative min-h-screen space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 ease-out pb-20 overflow-x-hidden bg-white">
+      {/* Pure White Background for the entire viewport */}
+      <div className="fixed inset-0 bg-white -z-10" />
+      
+      <style dangerouslySetInnerHTML={{ __html: `
+        body, main, header, aside, .sticky, [data-slot="card"] {
+          background-color: #ffffff !important;
+          background-image: none !important;
+          border: none !important;
+          box-shadow: none !important;
+          ring: none !important;
+          backdrop-filter: none !important;
+        }
+        .border-b, .border-t, .border {
+          border: none !important;
+        }
+        * {
+          box-shadow: none !important;
+          ring: 0 !important;
+        }
+      `}} />
 
-      <Card className="relative z-10 border-0 shadow-2xl ring-1 ring-border/20 bg-card/60 backdrop-blur-3xl overflow-hidden rounded-[2.5rem]">
-        <div className="h-2 w-full bg-gradient-to-r from-primary/40 to-primary"></div>
+
+      <Card className="relative z-10 border-0 shadow-none ring-0 bg-white overflow-hidden rounded-[2.5rem]">
+
         <CardHeader>
           <CardTitle>Daily Mood Check-in</CardTitle>
           <CardDescription>
@@ -401,25 +409,20 @@ export default function MoodTracker() {
           <div className="space-y-6">
             <div className="flex flex-col items-center justify-center py-12 transition-all duration-700 relative overflow-hidden rounded-[2rem] group">
               {/* Inner ambient glow background - more focused */}
-              <div
-                className={cn(
-                  "absolute inset-0 w-full h-full blur-[80px] opacity-[0.18] transition-all duration-1000 rounded-full scale-100 bg-gradient-to-b",
-                  MOOD_COLORS[moodValue[0]]
-                )}
-              />
 
-              <div className="relative z-10 w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 text-9xl md:text-[10rem] animate-breathing drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)] hover:scale-105 transition-transform duration-500">
+
+              <div className="relative z-10 w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 text-9xl md:text-[10rem] animate-breathing hover:scale-105 transition-transform duration-500 select-none">
                 {MOOD_EMOJIS[moodValue[0]]}
               </div>
 
               <div className="relative z-10 text-center space-y-1">
                 <p className={cn(
-                  "font-heading font-bold text-5xl tracking-tighter drop-shadow-md text-foreground"
+                  "font-heading font-bold text-5xl tracking-tighter text-foreground"
                 )}>
                   {moodValue[0]}
                 </p>
                 <p className={cn(
-                  "text-xl font-semibold tracking-wide transition-all duration-500 drop-shadow-md",
+                  "text-xl font-semibold tracking-wide transition-all duration-500",
                   moodValue[0] <= 2 ? "text-rose-500" :
                     moodValue[0] <= 4 ? "text-orange-500" :
                       moodValue[0] <= 5 ? "text-blue-500" :
@@ -640,14 +643,13 @@ export default function MoodTracker() {
           {pastEntries.map((entry) => (
             <Card
               key={entry.id || entry.timestamp}
-              className="relative z-10 border-0 shadow-sm ring-1 ring-border/30 bg-card/40 backdrop-blur-xl hover:shadow-md transition-all hover:-translate-y-0.5 rounded-2xl overflow-hidden"
+              className="relative z-10 border-0 shadow-none ring-0 bg-white transition-all rounded-2xl overflow-hidden"
             >
               <CardContent className="p-4 flex items-start gap-4">
                 <div className={cn(
-                  "text-3xl rounded-2xl w-14 h-14 flex items-center justify-center shrink-0 shadow-inner transition-transform hover:scale-110 duration-300 bg-gradient-to-br border border-white/10",
-                  MOOD_COLORS[entry.detailedScore ?? (entry.level * 2)] || "from-secondary to-secondary/50"
+                  "text-3xl w-14 h-14 flex items-center justify-center shrink-0 transition-transform hover:scale-110 duration-300 bg-transparent rounded-2xl animate-breathing",
                 )}>
-                  <span className="drop-shadow-sm">{entry.emoji}</span>
+                  <span className="drop-shadow-sm select-none">{entry.emoji}</span>
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between items-start mb-1">
@@ -675,7 +677,7 @@ export default function MoodTracker() {
                       return (
                         <span
                           key={tag}
-                          className={`text-[10px] tracking-wide px-2.5 py-0.5 rounded-full font-medium border ${isPos ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' : isNeg ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800' : 'bg-secondary text-primary border-transparent'}`}
+                          className={`text-[10px] tracking-wide px-2.5 py-0.5 rounded-full font-medium ${isPos ? 'text-green-600' : isNeg ? 'text-red-600' : 'text-primary'}`}
                         >
                           {tag}
                         </span>
@@ -683,11 +685,11 @@ export default function MoodTracker() {
                     })}
                   </div>
                   {entry.suggestion && (
-                    <p className="text-sm text-primary font-medium mt-3 bg-primary/10 p-2.5 rounded-lg border border-primary/20">{entry.suggestion}</p>
+                    <p className="text-sm text-primary font-medium mt-3 p-0">{entry.suggestion}</p>
                   )}
                   {entry.is_locked || entry.isLocked ? (
                     unlockedEntries.includes(entry.id || entry.timestamp) ? (
-                      <div className="mt-3 bg-primary/5 border border-primary/20 p-3 rounded-xl animate-in fade-in zoom-in-95">
+                      <div className="mt-3 p-0 animate-in fade-in zoom-in-95">
                         <div className="flex items-center gap-2 mb-1.5">
                           <span className="text-sm">🔓</span>
                           <span className="text-xs font-semibold text-primary uppercase tracking-wider">Secure Note Unlocked</span>
@@ -695,7 +697,7 @@ export default function MoodTracker() {
                         <p className="text-sm text-foreground leading-relaxed pl-1 whitespace-pre-wrap">{entry.secure_note || entry.secureNote}</p>
                       </div>
                     ) : (
-                      <div className="mt-3 bg-secondary/30 border border-border/50 p-3 rounded-xl flex items-center justify-between gap-3">
+                      <div className="mt-3 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
                           <span className="text-sm">🔒</span>
                           <span className="text-sm font-semibold text-foreground">Locked Entry</span>
@@ -712,7 +714,7 @@ export default function MoodTracker() {
                     )
                   ) : (
                     entry.note && (
-                      <p className="text-sm text-muted-foreground mt-2 bg-secondary/20 p-2.5 rounded-lg whitespace-pre-wrap">{entry.note}</p>
+                      <p className="text-sm text-muted-foreground mt-2 p-0 whitespace-pre-wrap">{entry.note}</p>
                     )
                   )}
                 </div>
@@ -723,7 +725,7 @@ export default function MoodTracker() {
       </div>
 
       <Dialog open={isKeypadOpen} onOpenChange={setIsKeypadOpen}>
-        <DialogContent className="sm:max-w-xs p-6 bg-background rounded-3xl" showCloseButton={false}>
+        <DialogContent className="sm:max-w-xs p-6 bg-white rounded-3xl" showCloseButton={false}>
           <div className="flex justify-between items-center mb-6">
             <DialogTitle className="text-xl font-heading font-semibold flex items-center gap-2">
               {keypadContext === 'auto' ? <Shield className="w-5 h-5 text-primary" /> : <Lock className="w-5 h-5 text-primary" />}
