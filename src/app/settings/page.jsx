@@ -145,11 +145,52 @@ export default function Settings() {
           .goog-te-gadget-simple .goog-te-menu-value span:nth-child(5) {
             display: none !important;
           }
-          iframe.goog-te-banner-frame {
+          /* 隐藏顶部的 Google 翻译横幅 */
+          iframe.goog-te-banner-frame,
+          .goog-te-banner-frame {
             display: none !important;
           }
+          
+          /* 隐藏鼠标悬停时的原始文字提示框 */
+          #goog-gt-tt, 
+          .goog-te-balloon-frame {
+            display: none !important;
+            visibility: hidden !important;
+          }
+          
+          /* 修复页面偏移 */
           body {
             top: 0 !important;
+            position: static !important;
+          }
+
+          /* 确保下拉框组件本身是可见且可点击的 */
+          #google_translate_element {
+            display: block !important;
+          }
+          
+          /* 针对简单的 gadget 样式进行优化 */
+          .goog-te-gadget-simple {
+            background-color: #f8fafc !important; /* bg-slate-50 */
+            border: 1px solid #e2e8f0 !important; /* border-slate-200 */
+            padding: 8px 16px !important;
+            border-radius: 9999px !important;
+            display: flex !important;
+            align-items: center !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+          }
+          .dark .goog-te-gadget-simple {
+            background-color: #1e293b !important; /* bg-slate-800 */
+            border-color: #334155 !important; /* border-slate-700 */
+            color: white !important;
+          }
+          .goog-te-gadget-simple:hover {
+            border-color: #7c3aed !important; /* border-primary */
+            background-color: #f1f5f9 !important;
+          }
+          .dark .goog-te-gadget-simple:hover {
+            background-color: #334155 !important;
           }
         `}</style>
         <Card className="border-0 shadow-sm ring-1 ring-border/50">
@@ -183,7 +224,7 @@ export default function Settings() {
               </div>
               <div
                 id="google_translate_anchor"
-                className="min-h-[40px] min-w-[140px] flex items-center justify-center bg-secondary/30 px-4 py-1.5 rounded-full border border-border/50 hover:bg-secondary/50 transition-colors cursor-pointer group text-sm font-medium text-foreground"
+                className="min-h-[40px] flex items-center justify-center transition-colors cursor-pointer group text-sm font-medium text-foreground"
               >
                 {/* The persistent widget will be appended here via useEffect */}
               </div>
