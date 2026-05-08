@@ -6,8 +6,7 @@ export function ThemeInitializer() {
   useEffect(() => {
     try {
       const storedTheme = localStorage.getItem("theme");
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const useDark = storedTheme === "dark" || (!storedTheme && prefersDark);
+      const useDark = storedTheme === "dark";
 
       document.documentElement.classList.toggle("dark", useDark);
     } catch (_) {
