@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Flame, BookOpen, TrendingUp, ClipboardCheck, MessageSquare, Music } from "lucide-react";
+import { Flame, BookOpen, ClipboardCheck, Music } from "lucide-react";
 
 import { useState, useEffect } from "react";
 
@@ -39,21 +39,18 @@ export default function Insights() {
   const [journalCount, setJournalCount] = useState(0);
   const [assessments, setAssessments] = useState([]);
   const [mixCount, setMixCount] = useState(0);
-  const [companionCount, setCompanionCount] = useState(0);
 
   useEffect(() => {
     Promise.all([
       fetch("/api/mood").then(res => res.json()),
       fetch("/api/journal").then(res => res.json()),
       fetch("/api/assessment").then(res => res.json()),
-      fetch("/api/mixes").then(res => res.json()),
-      fetch("/api/companion").then(res => res.json())
-    ]).then(([moodData, journalData, assessmentData, mixData, companionData]) => {
+      fetch("/api/mixes").then(res => res.json())
+    ]).then(([moodData, journalData, assessmentData, mixData]) => {
       setMoodEntries(moodData);
       setJournalCount(journalData.length);
       setAssessments(assessmentData || []);
       setMixCount(mixData?.length || 0);
-      setCompanionCount(companionData?.length || 0);
 
       const recent30 = [];
       let hasRecentData = false;
@@ -148,32 +145,6 @@ export default function Insights() {
               <p className="text-xs text-muted-foreground">
                 Total journal entries
               </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-green-50 to-transparent">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-green-100 text-green-500 rounded-full shrink-0">
-              <TrendingUp className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-bold text-lg">{moodEntries.length > 0 ? "Tracking" : "N/A"}</p>
-              <p className="text-xs text-muted-foreground">Progress status</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card className="border-0 shadow-sm ring-1 ring-border/50 bg-gradient-to-br from-purple-50 to-transparent">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-purple-100 text-purple-500 rounded-full shrink-0">
-              <MessageSquare className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-bold text-lg">{companionCount}</p>
-              <p className="text-xs text-muted-foreground">Companion interactions</p>
             </div>
           </CardContent>
         </Card>
