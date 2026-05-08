@@ -19,10 +19,17 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { X, Delete, Pencil, Trash2 } from "lucide-react";
+import { X, Delete, Pencil, Trash2, GraduationCap, Users, Heart, Briefcase, Activity, Banknote, Shield, Lock, Unlock, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const CATEGORIES = ["School", "Family", "Social", "Work", "Health", "Finances"];
+const CATEGORIES = [
+  { id: "School", icon: GraduationCap, color: "text-blue-500" },
+  { id: "Family", icon: Users, color: "text-pink-500" },
+  { id: "Social", icon: Heart, color: "text-rose-500" },
+  { id: "Work", icon: Briefcase, color: "text-amber-600" },
+  { id: "Health", icon: Activity, color: "text-emerald-500" },
+  { id: "Finances", icon: Banknote, color: "text-teal-600" },
+];
 
 const MOOD_EMOJIS = {
   0: "💀",
@@ -53,29 +60,21 @@ const MOOD_LABELS = {
 };
 
 const MOOD_COLORS = {
-  0: "bg-rose-500/20",
-  1: "bg-rose-400/20",
-  2: "bg-orange-400/20",
-  3: "bg-amber-400/20",
-  4: "bg-yellow-400/20",
-  5: "bg-blue-400/20",
-  6: "bg-sky-400/20",
-  7: "bg-emerald-400/20",
-  8: "bg-green-400/20",
-  9: "bg-teal-400/20",
-  10: "bg-purple-400/20",
+  0: "from-stone-600 to-zinc-900",
+  1: "from-zinc-500 to-stone-700",
+  2: "from-slate-500 to-slate-800",
+  3: "from-indigo-400 to-blue-700",
+  4: "from-sky-400 to-cyan-700",
+  5: "from-teal-400 to-emerald-700",
+  6: "from-emerald-400 to-teal-700",
+  7: "from-yellow-400 to-orange-600",
+  8: "from-orange-400 to-rose-600",
+  9: "from-rose-400 to-purple-600",
+  10: "from-purple-500 to-indigo-800",
 };
 
 export default function MoodTracker() {
   const [moodValue, setMoodValue] = useState([5]);
-  const [moodImages, setMoodImages] = useState({
-    '0-2': [],
-    '3-5': [],
-    '6-7': [],
-    '8-10': []
-  });
-  const [currentMoodPhoto, setCurrentMoodPhoto] = useState(null);
-  const [currentTier, setCurrentTier] = useState(null);
   const [isInteracted, setIsInteracted] = useState(false);
 
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -231,35 +230,8 @@ export default function MoodTracker() {
       .then((res) => res.json())
       .then((data) => setPastEntries(data))
       .catch((err) => console.error("Failed to load mood entries:", err));
-
-    fetch("/api/mood-images")
-      .then((res) => res.json())
-      .then((data) => setMoodImages(data))
-      .catch((err) => console.error("Failed to load mood images:", err));
   }, []);
 
-  const getTierForMood = (val) => {
-    if (val <= 2) return '0-2';
-    if (val <= 5) return '3-5';
-    if (val <= 7) return '6-7';
-    return '8-10';
-  };
-
-  useEffect(() => {
-    if (!isInteracted) return;
-
-    const tier = getTierForMood(moodValue[0]);
-    if (tier !== currentTier) {
-      setCurrentTier(tier);
-      const availableImages = moodImages[tier];
-      if (availableImages && availableImages.length > 0) {
-        const randomImg = availableImages[Math.floor(Math.random() * availableImages.length)];
-        setCurrentMoodPhoto(`/mood/${tier}/${randomImg}`);
-      } else {
-        setCurrentMoodPhoto(null);
-      }
-    }
-  }, [moodValue, currentTier, moodImages, isInteracted]);
 
   const handleSave = async (overridePin = null) => {
     if (isSaving) return;
@@ -354,19 +326,19 @@ export default function MoodTracker() {
     }
   };
 
-  const toggleCategory = (cat) => {
+  const toggleCategory = (catId) => {
     setSelectedCategories((prev) => {
-      if (prev.includes(cat)) {
-        const newCats = prev.filter(c => c !== cat);
+      if (prev.includes(catId)) {
+        const newCats = prev.filter(c => c !== catId);
         // remove its impact
         setCategoryImpacts(curr => {
           const newImpacts = { ...curr };
-          delete newImpacts[cat];
+          delete newImpacts[catId];
           return newImpacts;
         });
         return newCats;
       } else {
-        return [...prev, cat];
+        return [...prev, catId];
       }
     });
   };
@@ -401,8 +373,35 @@ export default function MoodTracker() {
   const allImpactsAssigned = selectedCategories.length > 0 && selectedCategories.every(cat => categoryImpacts[cat]);
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out pb-10">
-      <Card className="border-0 shadow-md ring-1 ring-border/50 overflow-hidden">
+    <div className="relative min-h-screen space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 ease-out pb-20">
+      {/* Dynamic Background Elements */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* Primary Glow */}
+        <div 
+          className={cn(
+            "absolute -top-[20%] -left-[10%] w-[70%] h-[70%] blur-[120px] opacity-[0.15] rounded-full transition-all duration-1000 bg-gradient-to-br",
+            MOOD_COLORS[moodValue[0]]
+          )}
+        />
+        {/* Secondary Glow */}
+        <div 
+          className={cn(
+            "absolute -bottom-[10%] -right-[10%] w-[60%] h-[60%] blur-[100px] opacity-[0.1] rounded-full transition-all duration-1000 delay-150 bg-gradient-to-tl",
+            MOOD_COLORS[moodValue[0]]
+          )}
+        />
+        {/* Accent Floating Blob */}
+        <div 
+          className={cn(
+            "absolute top-[40%] left-[60%] w-[30%] h-[30%] blur-[80px] opacity-[0.08] rounded-full transition-all duration-1000 delay-300 animate-float bg-gradient-to-tr",
+            MOOD_COLORS[moodValue[0]]
+          )}
+        />
+        {/* Subtle Noise Texture Overlay */}
+        <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+      </div>
+
+      <Card className="relative z-10 border-0 shadow-2xl ring-1 ring-border/20 bg-card/60 backdrop-blur-3xl overflow-hidden rounded-[2.5rem]">
         <div className="h-2 w-full bg-gradient-to-r from-primary/40 to-primary"></div>
         <CardHeader>
           <CardTitle>Daily Mood Check-in</CardTitle>
@@ -413,25 +412,17 @@ export default function MoodTracker() {
         <CardContent className="space-y-8">
 
           <div className="space-y-6">
-            <div className="flex flex-col items-center justify-center py-10 bg-transparent transition-all duration-700 relative overflow-hidden">
-              {/* Soft ambient glow background */}
-              {currentMoodPhoto ? (
-                <div
-                  className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-700 z-0"
-                  style={{ backgroundImage: `url(${currentMoodPhoto})` }}
-                />
-              ) : (
-                <div
-                  className={cn(
-                    "absolute inset-0 w-full h-full blur-[80px] opacity-40 transition-colors duration-700 rounded-full scale-110",
-                    MOOD_COLORS[moodValue[0]]
-                  )}
-                />
-              )}
+            <div className="flex flex-col items-center justify-center py-12 transition-all duration-700 relative overflow-hidden group">
+              {/* Inner ambient glow background */}
+              <div
+                className={cn(
+                  "absolute inset-0 w-full h-full blur-[100px] opacity-25 transition-all duration-1000 rounded-full scale-125 bg-gradient-to-b",
+                  MOOD_COLORS[moodValue[0]]
+                )}
+              />
 
-              {/* Maintain identical layout size by keeping the container even if the emoji is hidden */}
-              <div className="relative z-10 w-40 h-40 md:w-48 md:h-48 flex items-center justify-center mb-4 text-8xl md:text-9xl animate-breathing drop-shadow-2xl">
-                {!currentMoodPhoto && MOOD_EMOJIS[moodValue[0]]}
+              <div className="relative z-10 w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 text-9xl md:text-[10rem] animate-breathing drop-shadow-[0_25px_60px_rgba(0,0,0,0.2)] hover:scale-110 transition-transform duration-500">
+                {MOOD_EMOJIS[moodValue[0]]}
               </div>
 
               <div className="relative z-10 text-center space-y-1">
@@ -485,19 +476,22 @@ export default function MoodTracker() {
 
             <div className="flex flex-wrap justify-center gap-4 md:gap-6 max-w-2xl mx-auto px-4">
               {CATEGORIES.map((cat) => (
-                <Badge
-                  key={cat}
-                  variant={selectedCategories.includes(cat) ? "default" : "outline"}
+                <div
+                  key={cat.id}
                   className={cn(
-                    "cursor-pointer px-6 py-4 transition-all duration-400 text-base rounded-2xl border-none ring-1 ring-border/50",
-                    selectedCategories.includes(cat)
-                      ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-105"
-                      : "bg-card hover:bg-secondary hover:ring-primary/30 text-foreground shadow-sm"
+                    "cursor-pointer px-6 py-4 transition-all duration-300 rounded-2xl border flex items-center gap-3 group backdrop-blur-md",
+                    selectedCategories.includes(cat.id)
+                      ? "bg-primary/90 text-primary-foreground border-primary shadow-lg shadow-primary/20 scale-105"
+                      : "bg-card/40 hover:bg-secondary/40 border-border/50 text-foreground hover:border-primary/30 shadow-sm"
                   )}
-                  onClick={() => toggleCategory(cat)}
+                  onClick={() => toggleCategory(cat.id)}
                 >
-                  {cat}
-                </Badge>
+                  <cat.icon className={cn(
+                    "w-5 h-5 transition-colors",
+                    selectedCategories.includes(cat.id) ? "text-primary-foreground" : cat.color
+                  )} />
+                  <span className="font-medium">{cat.id}</span>
+                </div>
               ))}
             </div>
           </div>
@@ -659,12 +653,14 @@ export default function MoodTracker() {
           {pastEntries.map((entry) => (
             <Card
               key={entry.id || entry.timestamp}
-              className="border-0 shadow-sm ring-1 ring-border/50 hover:shadow-md transition-shadow"
+              className="relative z-10 border-0 shadow-sm ring-1 ring-border/30 bg-card/40 backdrop-blur-xl hover:shadow-md transition-all hover:-translate-y-0.5 rounded-2xl overflow-hidden"
             >
               <CardContent className="p-4 flex items-start gap-4">
-                {/* Retaining backward compatible emoji rendering for lists */}
-                <div className="text-3xl bg-secondary rounded-full w-12 h-12 flex items-center justify-center shrink-0">
-                  {entry.emoji}
+                <div className={cn(
+                  "text-3xl rounded-2xl w-14 h-14 flex items-center justify-center shrink-0 shadow-inner transition-transform hover:scale-110 duration-300 bg-gradient-to-br border border-white/10",
+                  MOOD_COLORS[entry.detailedScore ?? (entry.level * 2)] || "from-secondary to-secondary/50"
+                )}>
+                  <span className="drop-shadow-sm">{entry.emoji}</span>
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between items-start mb-1">
@@ -742,7 +738,8 @@ export default function MoodTracker() {
       <Dialog open={isKeypadOpen} onOpenChange={setIsKeypadOpen}>
         <DialogContent className="sm:max-w-xs p-6 bg-background rounded-3xl" showCloseButton={false}>
           <div className="flex justify-between items-center mb-6">
-            <DialogTitle className="text-xl font-heading font-medium">
+            <DialogTitle className="text-xl font-heading font-semibold flex items-center gap-2">
+              {keypadContext === 'auto' ? <Shield className="w-5 h-5 text-primary" /> : <Lock className="w-5 h-5 text-primary" />}
               {keypadContext === 'auto' ? 'Set Auto PIN' : keypadContext === 'manual' ? 'Enter PIN to Save' : 'Unlock Entry'}
             </DialogTitle>
             <Button variant="ghost" size="icon" onClick={() => setIsKeypadOpen(false)} className="rounded-full">
