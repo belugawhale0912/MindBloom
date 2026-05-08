@@ -44,15 +44,19 @@ export async function POST(request) {
 
 export async function PATCH(request) {
   try {
-    const { id, is_collected } = await request.json();
+    const { id, is_collected, content } = await request.json();
 
     if (!id) {
       return NextResponse.json({ error: 'Missing entry id' }, { status: 400 });
     }
 
+    const updates = {};
+    if (is_collected !== undefined) updates.is_collected = is_collected;
+    if (content !== undefined) updates.content = content;
+
     const { data, error } = await supabase
       .from('journal_entries')
-      .update({ is_collected })
+      .update(updates)
       .eq('id', id)
       .eq('user_id', DEMO_USER_ID)
       .select()
