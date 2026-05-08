@@ -76,6 +76,7 @@ export default function MoodTracker() {
   });
   const [currentMoodPhoto, setCurrentMoodPhoto] = useState(null);
   const [currentTier, setCurrentTier] = useState(null);
+  const [isInteracted, setIsInteracted] = useState(false);
 
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categoryImpacts, setCategoryImpacts] = useState({});
@@ -247,18 +248,18 @@ export default function MoodTracker() {
   };
 
   useEffect(() => {
+    if (!isInteracted) return;
+
     const tier = getTierForMood(moodValue[0]);
-    if (tier !== currentTier) {
-      setCurrentTier(tier);
-      const availableImages = moodImages[tier];
-      if (availableImages && availableImages.length > 0) {
-        const randomImg = availableImages[Math.floor(Math.random() * availableImages.length)];
-        setCurrentMoodPhoto(`/mood/${tier}/${randomImg}`);
-      } else {
-        setCurrentMoodPhoto(null);
-      }
+    setCurrentTier(tier);
+    const availableImages = moodImages[tier];
+    if (availableImages && availableImages.length > 0) {
+      const randomImg = availableImages[Math.floor(Math.random() * availableImages.length)];
+      setCurrentMoodPhoto(`/mood/${tier}/${randomImg}`);
+    } else {
+      setCurrentMoodPhoto(null);
     }
-  }, [moodValue, currentTier, moodImages]);
+  }, [moodValue, moodImages, isInteracted]);
 
   const handleSave = async (overridePin = null) => {
     if (isSaving) return;
@@ -429,8 +430,12 @@ export default function MoodTracker() {
               )}
 
               {/* Maintain identical layout size by keeping the container even if the emoji is hidden */}
-              <div className="relative z-10 w-40 h-40 md:w-48 md:h-48 flex items-center justify-center mb-4 text-8xl md:text-9xl animate-breathing drop-shadow-2xl">
-                {!currentMoodPhoto && MOOD_EMOJIS[moodValue[0]]}
+              <div className="relative z-10 w-full max-w-sm h-40 md:h-48 flex items-center justify-center mb-4 animate-breathing drop-shadow-2xl">
+                {!currentMoodPhoto && (
+                  <p className="text-2xl md:text-3xl font-heading font-bold text-center text-foreground px-4">
+                    How was your mood today?
+                  </p>
+                )}
               </div>
 
               <div className="relative z-10 text-center space-y-1">
@@ -456,7 +461,10 @@ export default function MoodTracker() {
             <div className="px-6 max-w-xl mx-auto w-full">
               <Slider
                 value={moodValue}
-                onValueChange={(val) => setMoodValue(val)}
+                onValueChange={(val) => {
+                  setMoodValue(val);
+                  setIsInteracted(true);
+                }}
                 max={10}
                 min={0}
                 step={1}
