@@ -22,6 +22,9 @@ import {
   Pause,
   Sparkles,
   Bookmark,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 
 function GuidedToolsContent() {
@@ -50,6 +53,8 @@ function GuidedToolsContent() {
   const [savedJournals, setSavedJournals] = useState([]);
   const [isSavingJournal, setIsSavingJournal] = useState(false);
   const [journalViewMode, setJournalViewMode] = useState("all");
+  const [editingEntryId, setEditingEntryId] = useState(null);
+  const [editContent, setEditContent] = useState("");
 
   const meditationTopics = [
     { label: "Morning Mindfulness", value: "Morning Mindfulness" },
@@ -146,6 +151,41 @@ function GuidedToolsContent() {
       }
     } catch (e) {
       console.error("Failed to toggle collect status", e);
+    }
+  };
+
+  const canEdit = (dateString) => {
+    const entryDate = new Date(dateString);
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    return entryDate >= oneMonthAgo;
+  };
+
+  const handleEditStart = (entry) => {
+    setEditingEntryId(entry.id);
+    setEditContent(entry.content);
+  };
+
+  const handleEditCancel = () => {
+    setEditingEntryId(null);
+    setEditContent("");
+  };
+
+  const handleUpdateJournal = async (id) => {
+    if (!editContent.trim()) return;
+    try {
+      const res = await fetch("/api/journal", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, content: editContent })
+      });
+      if (res.ok) {
+        const updatedEntry = await res.json();
+        setSavedJournals(prev => prev.map(entry => entry.id === id ? updatedEntry : entry));
+        setEditingEntryId(null);
+      }
+    } catch (e) {
+      console.error("Failed to update journal", e);
     }
   };
 
@@ -519,16 +559,47 @@ function GuidedToolsContent() {
                       {dayGroup.entries.map((entry, index) => (
                         <div key={entry.id}>
                           <div className="rounded-xl bg-background/60 p-3 text-sm text-foreground whitespace-pre-wrap relative group">
-                            <button
-                              onClick={() => handleToggleCollect(entry.id, entry.is_collected)}
-                              className={`absolute top-2 right-2 p-1.5 rounded-full transition-colors ${entry.is_collected ? "text-[#b8860b] bg-[#b8860b]/10" : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-secondary"}`}
-                              title={entry.is_collected ? "Remove from Collection" : "Add to Collection"}
-                            >
-                              <Bookmark className="h-4 w-4" fill={entry.is_collected ? "currentColor" : "none"} />
-                            </button>
-                            <div className="pr-8">
-                              {entry.content}
+                            <div className="absolute top-2 right-2 flex items-center gap-1">
+                              {canEdit(entry.date) && editingEntryId !== entry.id && (
+                                <button
+                                  onClick={() => handleEditStart(entry)}
+                                  className="p-1.5 rounded-full text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-secondary transition-all"
+                                  title="Edit Entry"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleToggleCollect(entry.id, entry.is_collected)}
+                                className={`p-1.5 rounded-full transition-colors ${entry.is_collected ? "text-[#b8860b] bg-[#b8860b]/10" : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-secondary"}`}
+                                title={entry.is_collected ? "Remove from Collection" : "Add to Collection"}
+                              >
+                                <Bookmark className="h-4 w-4" fill={entry.is_collected ? "currentColor" : "none"} />
+                              </button>
                             </div>
+                            
+                            {editingEntryId === entry.id ? (
+                              <div className="space-y-2 pr-2">
+                                <Textarea
+                                  value={editContent}
+                                  onChange={(e) => setEditContent(e.target.value)}
+                                  className="min-h-[80px] text-sm resize-none bg-background rounded-lg border-border/50"
+                                  autoFocus
+                                />
+                                <div className="flex justify-end gap-2">
+                                  <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-destructive" onClick={handleEditCancel}>
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-primary" onClick={() => handleUpdateJournal(entry.id)}>
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="pr-12">
+                                {entry.content}
+                              </div>
+                            )}
                           </div>
                           {index < dayGroup.entries.length - 1 && <hr className="my-3 border-border/60" />}
                         </div>
