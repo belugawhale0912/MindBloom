@@ -373,30 +373,17 @@ export default function MoodTracker() {
   const allImpactsAssigned = selectedCategories.length > 0 && selectedCategories.every(cat => categoryImpacts[cat]);
 
   return (
-    <div className="relative min-h-screen space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 ease-out pb-20">
-      {/* Dynamic Background Elements */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Primary Glow */}
+    <div className="relative min-h-screen space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 ease-out pb-20 overflow-x-hidden bg-background">
+      {/* Refined Ambient Background */}
+      <div className="fixed inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden">
+        {/* Central Mood Aura - More contained */}
         <div 
           className={cn(
-            "absolute -top-[20%] -left-[10%] w-[70%] h-[70%] blur-[120px] opacity-[0.15] rounded-full transition-all duration-1000 bg-gradient-to-br",
+            "w-[120%] h-[120%] max-w-4xl max-h-[1000px] blur-[140px] opacity-[0.12] rounded-full transition-all duration-[1500ms] ease-in-out bg-gradient-to-tr",
             MOOD_COLORS[moodValue[0]]
           )}
         />
-        {/* Secondary Glow */}
-        <div 
-          className={cn(
-            "absolute -bottom-[10%] -right-[10%] w-[60%] h-[60%] blur-[100px] opacity-[0.1] rounded-full transition-all duration-1000 delay-150 bg-gradient-to-tl",
-            MOOD_COLORS[moodValue[0]]
-          )}
-        />
-        {/* Accent Floating Blob */}
-        <div 
-          className={cn(
-            "absolute top-[40%] left-[60%] w-[30%] h-[30%] blur-[80px] opacity-[0.08] rounded-full transition-all duration-1000 delay-300 animate-float bg-gradient-to-tr",
-            MOOD_COLORS[moodValue[0]]
-          )}
-        />
+        
         {/* Subtle Noise Texture Overlay */}
         <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
       </div>
@@ -412,16 +399,16 @@ export default function MoodTracker() {
         <CardContent className="space-y-8">
 
           <div className="space-y-6">
-            <div className="flex flex-col items-center justify-center py-12 transition-all duration-700 relative overflow-hidden group">
-              {/* Inner ambient glow background */}
+            <div className="flex flex-col items-center justify-center py-12 transition-all duration-700 relative overflow-hidden rounded-[2rem] group">
+              {/* Inner ambient glow background - more focused */}
               <div
                 className={cn(
-                  "absolute inset-0 w-full h-full blur-[100px] opacity-25 transition-all duration-1000 rounded-full scale-125 bg-gradient-to-b",
+                  "absolute inset-0 w-full h-full blur-[80px] opacity-[0.18] transition-all duration-1000 rounded-full scale-100 bg-gradient-to-b",
                   MOOD_COLORS[moodValue[0]]
                 )}
               />
 
-              <div className="relative z-10 w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 text-9xl md:text-[10rem] animate-breathing drop-shadow-[0_25px_60px_rgba(0,0,0,0.2)] hover:scale-110 transition-transform duration-500">
+              <div className="relative z-10 w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 text-9xl md:text-[10rem] animate-breathing drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)] hover:scale-105 transition-transform duration-500">
                 {MOOD_EMOJIS[moodValue[0]]}
               </div>
 
